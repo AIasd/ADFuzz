@@ -1,0 +1,5 @@
+collected_data/*
+carla_lbc/models/*
+carla_lbc/run_results
+carla_lbc/collected_data_customized
+*__pycache__

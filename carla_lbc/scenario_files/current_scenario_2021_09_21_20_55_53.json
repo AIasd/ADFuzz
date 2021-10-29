@@ -1,0 +1,30 @@
+{
+    "available_scenarios": [
+        {
+            "Town05": [
+                {
+                    "available_event_configurations": [
+                        {
+                            "route": 0,
+                            "center": {
+                                "pitch": "0.0",
+                                "x": "-120",
+                                "y": "30",
+                                "yaw": "270",
+                                "z": "0.0"
+                            },
+                            "transform": {
+                                "pitch": "0.0",
+                                "x": "-120",
+                                "y": "30",
+                                "yaw": "270",
+                                "z": "0.0"
+                            }
+                        }
+                    ],
+                    "scenario_type": "Scenario12"
+                }
+            ]
+        }
+    ]
+}
