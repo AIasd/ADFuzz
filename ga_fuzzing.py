@@ -83,7 +83,7 @@ from pymoo.model.individual import Individual
 from pgd_attack import pgd_attack, train_net, train_regression_net, VanillaDataset
 from acquisition import map_acquisition
 
-from customized_utils import rand_real,  make_hierarchical_dir, exit_handler, is_critical_region, if_violate_constraints, filter_critical_regions, encode_fields, remove_fields_not_changing, get_labels_to_encode, customized_fit, customized_standardize, customized_inverse_standardize, decode_fields, encode_bounds, recover_fields_not_changing, process_X, inverse_process_X, calculate_rep_d, select_batch_max_d_greedy, if_violate_constraints_vectorized, is_distinct_vectorized, eliminate_repetitive_vectorized, get_sorted_subfolders, load_data, get_F, set_general_seed, emptyobject, get_job_results
+from customized_utils import rand_real,  make_hierarchical_dir, exit_handler, is_critical_region, if_violate_constraints, filter_critical_regions, encode_fields, remove_fields_not_changing, get_labels_to_encode, customized_fit, customized_standardize, customized_inverse_standardize, decode_fields, encode_bounds, recover_fields_not_changing, process_X, inverse_process_X, calculate_rep_d, select_batch_max_d_greedy, if_violate_constraints_vectorized, is_distinct_vectorized, eliminate_repetitive_vectorized, get_sorted_subfolders, load_data, get_F, set_general_seed, emptyobject, get_job_results, choose_farthest_offs
 
 
 
@@ -730,43 +730,38 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
 
     def set_off(self):
-
         self.tmp_off = []
-        cur_best_y = [None, 10000]
         if self.algorithm_name == 'avfuzzer':
+            cur_best_y = [None, 10000]
             if self.cur_gen >= 0:
-                # local
+                # local search
                 if 0 <= self.local_gen <= 4:
                     with open('tmp_log.txt', 'a') as f_out:
                         f_out.write(str(self.cur_gen)+' local '+str(self.local_gen)+'\n')
-                    self.tmp_off, _ = self.local_mating.do(self.problem, self.pop, self.n_offsprings, algorithm=self)
 
                     cur_pop = self.pop[-self.pop_size:]
                     for p in cur_pop:
                         if p.F < self.local_best_y[1]:
                             self.local_best_y = [p, p.F]
-
                     if self.local_gen == 4:
-                        self.local_gen = -2
+                        self.local_gen = -1
                         if self.local_best_y[1] < self.global_best_y[1]:
                             self.global_best_y = self.local_best_y
-                        # with open('tmp_log.txt', 'a') as f_out:
-                        #     f_out.write('self.best_y_gen: '+str(self.best_y_gen)+'\n')
                         if self.local_best_y[1] < self.best_y_gen[-1][1]:
                             self.best_y_gen[-1] = self.local_best_y
                         if self.local_best_y[1] < self.restart_best_y[1]:
                             self.restart_best_y = self.local_best_y
+                    else:
+                        self.local_gen += 1
 
-                    self.local_gen += 1
-                # global
+                    self.tmp_off, _ = self.local_mating.do(self.problem, self.pop, self.n_offsprings, algorithm=self)
+
+                # global search
                 else:
                     cur_pop = self.pop[-self.pop_size:]
                     for p in cur_pop:
-                        # with open('tmp_log.txt', 'a') as f_out:
-                        #     f_out.write('self.cur_gen: '+str(self.cur_gen)+', p.F:'+str(p.F)+'\n')
                         if p.F < cur_best_y[1]:
                             cur_best_y = [p, p.F]
-
                     if cur_best_y[1] < self.global_best_y[1]:
                         self.global_best_y = cur_best_y
                     if len(self.best_y_gen) == self.cur_gen:
@@ -790,23 +785,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
                             tmp_off_candidates = self.plain_initialization.do(self.problem, 1000, algorithm=self)
                             tmp_off_candidates_X = np.stack([p.X for p in tmp_off_candidates])
-
-                            from sklearn.preprocessing import Normalizer
-                            Normalizer
-                            transformer = Normalizer().fit(tmp_off_candidates_X)
-                            tmp_off_candidates_X_norm = transformer.transform(tmp_off_candidates_X)
-                            all_pop_run_X_norm = transformer.transform(self.all_pop_run_X)
-                            dis = tmp_off_candidates_X_norm[:, np.newaxis,:] - all_pop_run_X_norm
-
-                            dis_sum = np.mean(np.mean(np.abs(dis), axis=2), axis=1)
-                            chosen_inds = np.argsort(dis_sum)[-self.pop_size:]
-
-
-                            with open('tmp_log.txt', 'a') as f_out:
-                                f_out.write('shapes: '+str(np.shape(tmp_off_candidates_X[:, np.newaxis,:]))+','+str(np.shape(self.all_pop_run_X))+str(np.shape(dis))+str(np.shape(dis_sum))+'\n')
-
-
-
+                            chosen_inds = choose_farthest_offs(tmp_off_candidates_X, self.all_pop_run_X, self.pop_size)
                             self.tmp_off = tmp_off_candidates[chosen_inds]
                             self.restart_best_y = [None, 10000]
                             normal = False
@@ -830,16 +809,13 @@ class NSGA2_CUSTOMIZED(NSGA2):
                             self.local_gen = 0
                             normal = False
                             # not increasing cur_gen in this case
-
                     if normal:
                         with open('tmp_log.txt', 'a') as f_out:
                             f_out.write(str(self.cur_gen)+' normal'+'\n')
-
                         self.tmp_off, _ = self.mating.do(self.problem, self.pop, self.pop_size, algorithm=self)
-                        # self.tmp_off = self.repair.do(self.problem, self.tmp_off)
-
                         self.cur_gen += 1
             else:
+                # initialization
                 self.tmp_off = self.plain_initialization.do(self.problem, self.n_offsprings, algorithm=self)
                 self.cur_gen += 1
 
@@ -1380,17 +1356,18 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
         "int": get_crossover("int_sbx", prob=0.8, eta=5)
     })
 
-    # changed from int(prob=0.05*problem.n_var) to prob=0.05*problem.n_var
+    # hack: changed from int(prob=0.05*problem.n_var) to prob=0.4
+    if fuzzing_arguments.algorithm_name in ['avfuzzer']:
+        mutation_prob = 0.4
+    else:
+        mutation_prob = int(0.05*problem.n_var)
     mutation = MixedVariableMutation(problem.mask, {
-        "real": get_mutation("real_pm", eta=5, prob=0.4),
-        "int": get_mutation("int_pm", eta=5, prob=0.4)
+        "real": get_mutation("real_pm", eta=5, prob=mutation_prob),
+        "int": get_mutation("int_pm", eta=5, prob=mutation_prob)
     })
-
     selection = TournamentSelection(func_comp=binary_tournament)
     repair = ClipRepair()
-
     eliminate_duplicates = NoDuplicateElimination()
-
     mating = MyMatingVectorized(selection,
                     crossover,
                     mutation,
@@ -1399,7 +1376,6 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
                     fuzzing_arguments.mating_max_iterations,
                     repair=repair,
                     eliminate_duplicates=eliminate_duplicates)
-
 
     # extra mating methods for avfuzzer
     local_mutation = MixedVariableMutation(problem.mask, {
@@ -1414,8 +1390,6 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
                     fuzzing_arguments.mating_max_iterations,
                     repair=repair,
                     eliminate_duplicates=eliminate_duplicates)
-
-
 
 
 

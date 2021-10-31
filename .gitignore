@@ -2,6 +2,8 @@ collected_data/*
 carla_lbc/models/*
 carla_lbc/run_results
 carla_lbc/collected_data_customized
+carla_lbc/scenario_files
+carla_lbc/tmp_folder
 *__pycache__
 no_simulation_script/run_results_no_simulation
 tmp_log.txt

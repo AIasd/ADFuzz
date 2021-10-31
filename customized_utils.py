@@ -1084,6 +1084,27 @@ def pretrain_regression_nets(initial_X, initial_objectives_list, objective_weigh
 # ---------------- NSGA2-SM -------------------
 
 
+# ---------------- AVFuzzer -------------------
+def choose_farthest_offs(tmp_off_candidates_X, all_pop_run_X, pop_size):
+    from sklearn.preprocessing import Normalizer
+    Normalizer
+    # transformer = Normalizer().fit(tmp_off_candidates_X)
+    # tmp_off_candidates_X = transformer.transform(tmp_off_candidates_X)
+    # all_pop_run_X = transformer.transform(all_pop_run_X)
+
+    # mean = np.mean(tmp_off_candidates_X, axis=0)
+    # std = np.std(tmp_off_candidates_X, axis=0)
+    # tmp_off_candidates_X = (tmp_off_candidates_X-mean)/std
+    # all_pop_run_X = (all_pop_run_X-mean)/std
+
+    dis = tmp_off_candidates_X[:, np.newaxis,:] - all_pop_run_X
+    dis_sum = np.mean(np.mean(np.abs(dis), axis=2), axis=1)
+    chosen_inds = np.argsort(dis_sum)[-pop_size:]
+    with open('tmp_log.txt', 'a') as f_out:
+        f_out.write('shapes: '+str(np.shape(tmp_off_candidates_X[:, np.newaxis,:]))+','+str(np.shape(all_pop_run_X))+str(np.shape(dis))+str(np.shape(dis_sum))+str(dis_sum)+'\n\n'+str(dis_sum[chosen_inds])+'\n')
+    return chosen_inds
+# ---------------- AVFuzzer -------------------
+
 
 # ---------------- acquisition related -------------------
 # TBD: greedily add point
