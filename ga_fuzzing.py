@@ -330,7 +330,7 @@ class MyProblem(Problem):
 
         out["F"] = current_F
         self.F_list.append(current_F)
-
+        print('\n'*3, 'self.F_list', len(self.F_list), self.F_list, '\n'*3)
 
         print('\n'*10, '+'*100)
 
@@ -401,12 +401,11 @@ class MySamplingVectorized(Sampling):
 
         tmp_off = algorithm.tmp_off
 
-        # print(tmp_off)
+
         tmp_off_and_X = []
         if len(tmp_off) > 0:
             tmp_off = [off.X for off in tmp_off]
             tmp_off_and_X = tmp_off
-        # print(tmp_off)
 
 
         def subroutine(X, tmp_off_and_X):
@@ -459,7 +458,7 @@ class MySamplingVectorized(Sampling):
                         prev_X = tmp_off_and_X
                     else:
                         prev_X = problem.interested_unique_bugs
-                    # print('prev_X.shape', prev_X.shape)
+
                     remaining_inds = is_distinct_vectorized(cur_X, prev_X, mask, xl, xu, p, c, th, verbose=False)
 
                     if len(remaining_inds) == 0:
@@ -641,8 +640,31 @@ class MyMatingVectorized(Mating):
         return _off, parents_obj
 
 
+# from pymoo.model.selection import Selection
+# class RouletteSelection(Selection):
+#
+#     def _do(self, pop, n_select, n_parents, **kwargs):
+#
+#         prob = []
+#         for p in pop:
+#             prob.append(p.F)
+#         (n_select, prob)
+#
+#         # number of random individuals needed
+#         n_random = n_select * n_parents
+#
+#         # number of permutations needed
+#         n_perms = math.ceil(n_random / len(pop))
+#
+#         # get random permutations and reshape them
+#         P = random_permuations(n_perms, len(pop))[:n_random]
+#
+#         return np.reshape(P, (n_select, n_parents))
+
+
+
 class NSGA2_CUSTOMIZED(NSGA2):
-    def __init__(self, dt=False, X=None, F=None, fuzzing_arguments=None, plain_sampling=None, **kwargs):
+    def __init__(self, dt=False, X=None, F=None, fuzzing_arguments=None, plain_sampling=None, local_mating=None, **kwargs):
         self.dt = dt
         self.X = X
         self.F = F
@@ -690,10 +712,140 @@ class NSGA2_CUSTOMIZED(NSGA2):
         self.high_conf_configs_ori_stack = []
 
 
+        # avfuzzer variables
+        self.best_y_gen = []
+        self.global_best_y = [None, 10000]
+        self.restart_best_y = [None, 10000]
+        self.local_best_y = [None, 10000]
+
+        self.local_gen = -1
+        self.restart_gen = 0
+        self.cur_gen = -1
+
+        self.local_mating = local_mating
+        self.mutation = kwargs['mutation']
+
+
+
+
 
     def set_off(self):
+
         self.tmp_off = []
-        if self.algorithm_name == 'random':
+        cur_best_y = [None, 10000]
+        if self.algorithm_name == 'avfuzzer':
+            if self.cur_gen >= 0:
+                # local
+                if 0 <= self.local_gen <= 4:
+                    with open('tmp_log.txt', 'a') as f_out:
+                        f_out.write(str(self.cur_gen)+' local '+str(self.local_gen)+'\n')
+                    self.tmp_off, _ = self.local_mating.do(self.problem, self.pop, self.n_offsprings, algorithm=self)
+
+                    cur_pop = self.pop[-self.pop_size:]
+                    for p in cur_pop:
+                        if p.F < self.local_best_y[1]:
+                            self.local_best_y = [p, p.F]
+
+                    if self.local_gen == 4:
+                        self.local_gen = -2
+                        if self.local_best_y[1] < self.global_best_y[1]:
+                            self.global_best_y = self.local_best_y
+                        # with open('tmp_log.txt', 'a') as f_out:
+                        #     f_out.write('self.best_y_gen: '+str(self.best_y_gen)+'\n')
+                        if self.local_best_y[1] < self.best_y_gen[-1][1]:
+                            self.best_y_gen[-1] = self.local_best_y
+                        if self.local_best_y[1] < self.restart_best_y[1]:
+                            self.restart_best_y = self.local_best_y
+
+                    self.local_gen += 1
+                # global
+                else:
+                    cur_pop = self.pop[-self.pop_size:]
+                    for p in cur_pop:
+                        # with open('tmp_log.txt', 'a') as f_out:
+                        #     f_out.write('self.cur_gen: '+str(self.cur_gen)+', p.F:'+str(p.F)+'\n')
+                        if p.F < cur_best_y[1]:
+                            cur_best_y = [p, p.F]
+
+                    if cur_best_y[1] < self.global_best_y[1]:
+                        self.global_best_y = cur_best_y
+                    if len(self.best_y_gen) == self.cur_gen:
+                        self.best_y_gen.append(cur_best_y)
+                    else:
+                        if cur_best_y[1] < self.best_y_gen[-1][1]:
+                            self.best_y_gen[-1] = cur_best_y
+
+                    if self.restart_gen == self.cur_gen:
+                        self.restart_best_y = cur_best_y
+
+                    normal = True
+                    # restart
+                    if self.cur_gen - self.restart_gen > 4:
+                        last_5_mean = np.mean([v for _, v in self.best_y_gen[-5:]])
+                        with open('tmp_log.txt', 'a') as f_out:
+                            f_out.write('last_5_mean: '+str(last_5_mean)+', cur_best_y[1]: '+str(cur_best_y[1])+'\n')
+                        if cur_best_y[1] >= last_5_mean:
+                            with open('tmp_log.txt', 'a') as f_out:
+                                f_out.write(str(self.cur_gen)+' restart'+'\n')
+
+                            tmp_off_candidates = self.plain_initialization.do(self.problem, 1000, algorithm=self)
+                            tmp_off_candidates_X = np.stack([p.X for p in tmp_off_candidates])
+
+                            from sklearn.preprocessing import Normalizer
+                            Normalizer
+                            transformer = Normalizer().fit(tmp_off_candidates_X)
+                            tmp_off_candidates_X_norm = transformer.transform(tmp_off_candidates_X)
+                            all_pop_run_X_norm = transformer.transform(self.all_pop_run_X)
+                            dis = tmp_off_candidates_X_norm[:, np.newaxis,:] - all_pop_run_X_norm
+
+                            dis_sum = np.mean(np.mean(np.abs(dis), axis=2), axis=1)
+                            chosen_inds = np.argsort(dis_sum)[-self.pop_size:]
+
+
+                            with open('tmp_log.txt', 'a') as f_out:
+                                f_out.write('shapes: '+str(np.shape(tmp_off_candidates_X[:, np.newaxis,:]))+','+str(np.shape(self.all_pop_run_X))+str(np.shape(dis))+str(np.shape(dis_sum))+'\n')
+
+
+
+                            self.tmp_off = tmp_off_candidates[chosen_inds]
+                            self.restart_best_y = [None, 10000]
+                            normal = False
+                            self.cur_gen += 1
+                            self.restart_gen = self.cur_gen
+
+                    # enter local
+                    with open('tmp_log.txt', 'a') as f_out:
+                        f_out.write('cur_best_y[1]'+str(cur_best_y[1])+', '+'self.restart_best_y[1]'+str(self.restart_best_y[1])+'\n')
+                    if normal and self.cur_gen - self.restart_gen > 2 and cur_best_y[1] < self.restart_best_y[1]:
+                            with open('tmp_log.txt', 'a') as f_out:
+                                f_out.write(str(self.cur_gen)+'enter local'+'\n')
+                            self.restart_best_y[1] = cur_best_y[1]
+
+                            pop = Population(self.pop_size, individual=Individual())
+                            pop.set("X", [self.global_best_y[0].X for _ in range(self.pop_size)])
+                            pop.set("F", [self.global_best_y[1] for _ in range(self.pop_size)])
+                            self.tmp_off = self.mutation.do(self.problem, pop)
+
+                            self.local_best_y = [None, 10000]
+                            self.local_gen = 0
+                            normal = False
+                            # not increasing cur_gen in this case
+
+                    if normal:
+                        with open('tmp_log.txt', 'a') as f_out:
+                            f_out.write(str(self.cur_gen)+' normal'+'\n')
+
+                        self.tmp_off, _ = self.mating.do(self.problem, self.pop, self.pop_size, algorithm=self)
+                        # self.tmp_off = self.repair.do(self.problem, self.tmp_off)
+
+                        self.cur_gen += 1
+            else:
+                self.tmp_off = self.plain_initialization.do(self.problem, self.n_offsprings, algorithm=self)
+                self.cur_gen += 1
+
+
+
+        elif self.algorithm_name == 'random':
             self.tmp_off = self.plain_initialization.do(self.problem, self.n_offsprings, algorithm=self)
         else:
             if self.algorithm_name == 'random-un':
@@ -972,7 +1124,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
             self.evaluator.eval(self.problem, self.off, algorithm=self)
 
 
-        if self.algorithm_name == 'random':
+        if self.algorithm_name in ['random', 'avfuzzer']:
             self.pop = self.off
         elif self.emcmc:
             new_pop = do_emcmc(parents, self.off, self.n_gen, self.problem.objective_weights, self.problem.fuzzing_arguments.default_objectives)
@@ -1228,11 +1380,11 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
         "int": get_crossover("int_sbx", prob=0.8, eta=5)
     })
 
+    # changed from int(prob=0.05*problem.n_var) to prob=0.05*problem.n_var
     mutation = MixedVariableMutation(problem.mask, {
-        "real": get_mutation("real_pm", eta=5, prob=int(0.05*problem.n_var)),
-        "int": get_mutation("int_pm", eta=5, prob=int(0.05*problem.n_var))
+        "real": get_mutation("real_pm", eta=5, prob=0.4),
+        "int": get_mutation("int_pm", eta=5, prob=0.4)
     })
-
 
     selection = TournamentSelection(func_comp=binary_tournament)
     repair = ClipRepair()
@@ -1249,11 +1401,29 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
                     eliminate_duplicates=eliminate_duplicates)
 
 
+    # extra mating methods for avfuzzer
+    local_mutation = MixedVariableMutation(problem.mask, {
+            "real": get_mutation("real_pm", eta=5, prob=0.6),
+            "int": get_mutation("int_pm", eta=5, prob=0.6)
+        })
+    local_mating = MyMatingVectorized(selection,
+                    crossover,
+                    local_mutation,
+                    fuzzing_arguments.use_unique_bugs,
+                    fuzzing_arguments.emcmc,
+                    fuzzing_arguments.mating_max_iterations,
+                    repair=repair,
+                    eliminate_duplicates=eliminate_duplicates)
+
+
+
+
+
     sampling = MySamplingVectorized(use_unique_bugs=fuzzing_arguments.use_unique_bugs, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
 
     plain_sampling = MySamplingVectorized(use_unique_bugs=False, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
 
-    algorithm = NSGA2_CUSTOMIZED(dt=dt_arguments.dt, X=dt_arguments.X, F=dt_arguments.F, fuzzing_arguments=fuzzing_arguments, plain_sampling=plain_sampling, sampling=sampling,
+    algorithm = NSGA2_CUSTOMIZED(dt=dt_arguments.dt, X=dt_arguments.X, F=dt_arguments.F, fuzzing_arguments=fuzzing_arguments, plain_sampling=plain_sampling, local_mating=local_mating, sampling=sampling,
     crossover=crossover,
     mutation=mutation,
     eliminate_duplicates=eliminate_duplicates,
