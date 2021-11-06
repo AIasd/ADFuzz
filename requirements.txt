@@ -53,7 +53,6 @@ dictdiffer==0.8.1
 dictor==0.1.7
 dill==0.3.4
 distlib==0.3.2
-distributed==2021.7.2
 docker-pycreds==0.4.0
 elasticsearch==7.13.1
 entrypoints==0.3
