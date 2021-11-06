@@ -121,7 +121,6 @@ matplotlib-inline==0.1.2
 mccabe==0.6.1
 mistune==0.8.4
 mmcv==1.3.9
--e git+https://github.com/open-mmlab/mmdetection.git@475c6bec197e6b495d48146636301590165d8f66#egg=mmdet
 mock==4.0.3
 motmetrics==1.2.0
 mpld3==0.5.2
@@ -206,7 +205,6 @@ pytz==2021.1
 PyWavelets==1.1.1
 PyYAML==5.4.1
 pyzmq==22.1.0
--e git+https://github.com/mageofboy/qdtrack.git@3458dffffb9a075852bf9d480f88a8e6f70ba9bf#egg=qdtrack
 qtconsole==5.1.0
 QtPy==1.9.0
 redis==3.5.3
