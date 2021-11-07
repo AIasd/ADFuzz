@@ -59,9 +59,9 @@ python ga_fuzzing.py --simulator no_simulation --n_gen 100 --pop_size 4 --algori
 
 ```
 
-### SVL2021.2.2+Apollo Master
+### SVL2021.3+Apollo Master
 #### Setup
-Install SVL2021.2.2 and Apollo Master following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
+Install SVL2021.3 and Apollo Master following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
 
 
 #### Install SVL Python API
@@ -105,7 +105,7 @@ pip install zmq
 ```
 and finally run the channel_extraction
 ```
- ./bazel-bin/cyber/python/cyber_py3/channels_data_extraction/channels_data_extraction
+./bazel-bin/cyber/python/cyber_py3/channels_data_extraction/channels_extraction
 ```
 
 
