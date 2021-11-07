@@ -4,7 +4,30 @@
 A Software Package for Fuzzing Autonomous Driving Systems in Simulators
 
 
-## Installation
+
+## Install pyenv and python3.8
+
+install pyenv
+```
+curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+```
+
+install python
+```
+PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
+pyenv install -s 3.8.5
+pyenv global 3.8.5
+pyenv rehash
+eval "$(pyenv init -)"
+```
+
+add the following lines to the end of `~/.bashrc` to make sure pyenv is active when openning a new terminal
+```
+PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
+eval "$(pyenv init -)"
+```
+
+## Environment Setup
 In `~/Docuements/self-driving-cars`,
 ```
 git clone https://github.com/AIasd/ADFuzz.git
@@ -15,6 +38,12 @@ Install environment
 pip3 install -r requirements.txt
 ```
 
+Install pytorch on its official website via pip.
+
+Install pytroch-lightening
+```
+pip3 install pytorch-lightning==0.8.5
+```
 
 ### No Simulation
 #### Setup
@@ -37,12 +66,35 @@ Install SVL2021.2.2 and Apollo Master following [the documentation of Running la
 #### Create Apollo Master in Vehicles
 SVL does not have a default "Apollo Master" for "Lincoln2017MKZ" under "Vehicles". To create one, one can duplicate "Apollo 5.0" and then add sensors "Clock Sensor" and "Signal Sensor" from "Apollo 6.0 (modular testing)".
 
-#### Run Fuzzing
+
+### Add channel_extraction
+```
+git clone https://github.com/AIasd/apollo_channel_extraction
+```
+put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/`.
+
+
+
+### Other preparation
 Need to change the field `model_id` in svl_specific to one's own model_id on svl web UI.
 
-Start Apollo and SVL API only respectively. Then in a separate terminal:
+#### Run Fuzzing
+Start Apollo and SVL API only respectively following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
+
+
+Then in a second terminal:
+```
+
+```
+
+Then in a third terminal:
+If using apollo with ground-truth traffic signal:
 ```
 python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal
+```
+Or if using apollo with ground-truth perception:
+```
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_modular
 ```
 
 
@@ -78,11 +130,11 @@ Go to the "files" tab, and download the model weights, named "epoch=24.ckpt". Mo
 #### Run Fuzzing
 ```
 # NSGA2-UN
-python ga_fuzzing.py -p 2015 -s 8791 -d 8792 --n_gen 2 --pop_size 2 -r 'town05_right_0' -c 'leading_car_braking_town05_fixed_npc_num' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5
+python ga_fuzzing.py -p 2015 -s 8791 -d 8792 --n_gen 2 --pop_size 2 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5
 
 # NSGA2-UN-ADV-NN
-python ga_fuzzing.py -p 2015 -s 8791 -d 8792 --n_gen 2 --pop_size 2 -r 'town05_right_0' -c 'leading_car_braking_town05_fixed_npc_num' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --rank_mode adv_nn --warm_up_path <path-to-warmup-run-folder> --warm_up_len 500 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 1
+python ga_fuzzing.py -p 2021 -s 8795 -d 8796 --n_gen 15 --pop_size 50 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --rank_mode adv_nn --warm_up_path <path-to-warm-up-run-folder> --warm_up_len 500 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 1
 
 # AVFuzzer
-python ga_fuzzing.py -p 2015 -s 8791 -d 8792 --n_gen 2 --pop_size 2 -r 'town05_right_0' -c 'leading_car_braking_town05_fixed_npc_num' --algorithm_name avfuzzer --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 0
+python ga_fuzzing.py -p 2018 -s 8793 -d 8794 --n_gen 200 --pop_size 4 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 0 --n_offsprings 50
 ```
