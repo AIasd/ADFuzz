@@ -63,9 +63,16 @@ python ga_fuzzing.py --simulator no_simulation --n_gen 100 --pop_size 4 --algori
 #### Setup
 Install SVL2021.2.2 and Apollo Master following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
 
+
+#### Install SVL Python API
+```
+git clone https://github.com/lgsvl/PythonAPI.git
+```
+Following the installation procedure at [https://github.com/lgsvl/PythonAPI](https://github.com/lgsvl/PythonAPI)
+
 #### Add channel_extraction
 ```
-git clone https://github.com/AIasd/apollo_channel_extraction
+git clone https://github.com/AIasd/apollo_channel_extraction.git
 ```
 and put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/`. Note that this step is preferred to be done before building apollo `./apollo.sh build_opt_gpu` to avoid extra building step.
 
