@@ -511,7 +511,7 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
         model_id = '9272dd1a-793a-45b2-bff4-3a160b506d75'
     elif ego_car_model == 'apollo_6_modular':
         model_id = '2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921'
-
+    print('\n'*3, 'ego car model is:', ego_car_model, '\n'*3)
 
     route_info = sim_specific_arguments.route_info
     deviations_folder = os.path.join(parent_folder, "current_run_data")
