@@ -92,9 +92,13 @@ then entering the docker via:
 ```
 docker exec -it <container name> /bin/bash
 ```
+install zmq via pip in the docker:
+```
+pip install zmq
+```
 and finally run the channel_extraction
 ```
- ./bazel-bin/cyber/python/cyber_py3/channels_data_extraction:channels_data_extraction
+ ./bazel-bin/cyber/python/cyber_py3/channels_data_extraction/channels_data_extraction
 ```
 
 

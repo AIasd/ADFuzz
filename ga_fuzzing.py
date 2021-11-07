@@ -19,12 +19,12 @@ if fuzzing_arguments.simulator in ['carla', 'svl']:
     sys.path.append(carla_lbc_root+'/carla_project/src')
     sys.path.append(carla_lbc_root+'/carla_specific_utils')
 
-    carla_root = os.path.expanduser('~/Documents/self-driving-cars/carla_0994_no_rss')
-    sys.path.append(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
-    sys.path.append(carla_root+'/PythonAPI/carla')
-    sys.path.append(carla_root+'/PythonAPI')
-
-    assert os.path.exists(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
+    if fuzzing_arguments.simulator in ['carla']:
+        carla_root = os.path.expanduser('~/Documents/self-driving-cars/carla_0994_no_rss')
+        sys.path.append(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
+        sys.path.append(carla_root+'/PythonAPI/carla')
+        sys.path.append(carla_root+'/PythonAPI')
+        assert os.path.exists(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
 elif fuzzing_arguments.simulator in ['carla_op']:
     carla_root = os.path.expanduser('~/Documents/self-driving-cars/carla_0911_rss')
     if not os.path.exists(carla_root):
