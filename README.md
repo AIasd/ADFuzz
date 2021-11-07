@@ -63,15 +63,16 @@ python ga_fuzzing.py --simulator no_simulation --n_gen 100 --pop_size 4 --algori
 #### Setup
 Install SVL2021.2.2 and Apollo Master following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
 
-#### Create Apollo Master in Vehicles
-SVL does not have a default "Apollo Master" for "Lincoln2017MKZ" under "Vehicles". To create one, one can duplicate "Apollo 5.0" and then add sensors "Clock Sensor" and "Signal Sensor" from "Apollo 6.0 (modular testing)".
-
-
-### Add channel_extraction
+#### Add channel_extraction
 ```
 git clone https://github.com/AIasd/apollo_channel_extraction
 ```
-put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/`.
+and put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/`. Note that this step is preferred to be done before building apollo `./apollo.sh build_opt_gpu` to avoid extra building step.
+
+
+#### Create Apollo Master in Vehicles
+SVL does not have a default "Apollo Master" for "Lincoln2017MKZ" under "Vehicles". To create one, one can duplicate "Apollo 5.0" and then add sensors "Clock Sensor" and "Signal Sensor" from "Apollo 6.0 (modular testing)".
+
 
 
 
@@ -83,11 +84,21 @@ Start Apollo and SVL API only respectively following [the documentation of Runni
 
 
 Then in a second terminal:
+Find apollo docker container id via:
+```
+docker ps
+```
+then entering the docker via:
+```
+docker exec -it <container name> /bin/bash
+```
+and finally run the channel_extraction
+```
+ ./bazel-bin/cyber/python/cyber_py3/channels_data_extraction:channels_data_extraction
 ```
 
-```
 
-Then in a third terminal:
+Finally, in a third terminal:
 If using apollo with ground-truth traffic signal:
 ```
 python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal
