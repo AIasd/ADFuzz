@@ -178,7 +178,6 @@ pycocotools==2.0.2
 pycodestyle==2.7.0
 pycparser==2.20
 pycryptodome==3.10.1
-pycurl==7.43.0.6
 pyDeprecate==0.3.1
 pydot==1.4.2
 pyflakes==2.3.1
