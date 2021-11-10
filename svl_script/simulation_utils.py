@@ -149,7 +149,7 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
     if not success:
         raise Exception('fail to spin up apollo')
 
-    return ego
+    return ego, dv
 
 
 
@@ -332,7 +332,7 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
             import traceback
             traceback.print_exc()
 
-        ego = initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, BRIDGE_PORT, events_path)
+        ego, dv = initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, BRIDGE_PORT, events_path)
 
         middle_point = lgsvl.Transform(position=(destination.position + start.position) * 0.5, rotation=start.rotation)
 
