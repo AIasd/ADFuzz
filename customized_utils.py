@@ -299,7 +299,8 @@ def exit_handler(ports):
     for port in ports:
         while is_port_in_use(port):
             try:
-                subprocess.run("kill $(lsof -t -i :" + str(port) + ")", shell=True)
+                # subprocess.run("kill $(lsof -t -i :" + str(port) + ")", shell=True)
+                subprocess.run("sudo kill $(lsof -t -i :" + str(port) + ")", shell=True)
                 print("-" * 20, "kill server at port", port)
             except:
                 continue
@@ -309,7 +310,8 @@ def exit_handler(ports):
     for proc in psutil.process_iter():
         # check whether the process to kill name matches
         if proc.name() == PROC_NAME:
-            proc.kill()
+            # proc.kill()
+            subprocess.run("sudo kill -9 " + str(proc.pid), shell=True)
 
 
 def get_sorted_subfolders(parent_folder, folder_type='all'):
