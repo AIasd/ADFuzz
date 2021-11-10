@@ -139,7 +139,7 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
 
             print('start', start)
             print('destination', destination)
-            dv.setup_apollo(destination.position.x, destination.position.z, modules, default_timeout=180)
+            dv.setup_apollo(destination.position.x, destination.position.z, modules, default_timeout=60)
             print('finish setup_apollo')
             success = True
             break
@@ -393,6 +393,9 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
                 control_policy = signal.control_policy
                 control_policy = "trigger=500;green=10;yellow=2;red=5;loop"
                 signal.control(control_policy)
+
+        # extra destination request to avoid previous request lost?
+        dv.set_destination(destination.position.x, destination.position.z)
 
         return sim
 
