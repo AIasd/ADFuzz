@@ -299,12 +299,12 @@ def receive_zmq(q, path_list, record_every_n_step):
                         # record image after warm-up stage
                         if int(sequence_num) > 150 and int(sequence_num) % record_every_n_step == 0:
                             img_path = main_camera_folder, sequence_num.decode()+'_'+timestamp_sec.decode()+'.jpg'
-                            # with open(os.path.join(img_path), 'wb') as f_out_front_camera:
+                            with open(os.path.join(img_path), 'wb') as f_out_front_camera:
+                                f_out_front_camera.write(front_image)
 
                             from PIL import Image
 
-                            # f_out_front_camera.write(front_image)
-                            img = Image.from_array(front_image)
+                            img = Image.open(img_path)
                             img = img.resize(img.size[0]//2, img.size[1]//2, Image.ANTIALIAS)
                             img.save(img_path)
 
