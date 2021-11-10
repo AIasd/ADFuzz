@@ -79,7 +79,6 @@ from pymoo.model.duplicate import NoDuplicateElimination
 from pymoo.model.survival import Survival
 from pymoo.model.individual import Individual
 
-
 from pgd_attack import pgd_attack, train_net, train_regression_net, VanillaDataset
 from acquisition import map_acquisition
 
@@ -711,6 +710,8 @@ class NSGA2_CUSTOMIZED(NSGA2):
         self.high_conf_configs_stack = []
         self.high_conf_configs_ori_stack = []
 
+        self.device_name = 'cuda'
+
 
         # avfuzzer variables
         self.best_y_gen = []
@@ -724,7 +725,6 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
         self.local_mating = local_mating
         self.mutation = kwargs['mutation']
-
 
 
 
@@ -981,7 +981,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
                     pool_data = torch.utils.data.Subset(pool_data, np.arange(len(pool_data)))
 
                     y_train = determine_y_upon_weights(self.problem.objectives_list, self.problem.objective_weights)
-                    clf = train_net(X_train, y_train, [], [], batch_train=60)
+                    clf = train_net(X_train, y_train, [], [], batch_train=60, device_name=self.device_name)
 
                     if self.use_unique_bugs:
                         unique_len = self.tmp_off_type_1_len
@@ -996,7 +996,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
                     if self.ranking_model == 'nn_pytorch':
                         print(X_train.shape, y_train.shape)
-                        clf = train_net(X_train, y_train, [], [], batch_train=200)
+                        clf = train_net(X_train, y_train, [], [], batch_train=200, device_name=self.device_name)
                     elif self.ranking_model == 'adaboost':
                         from sklearn.ensemble import AdaBoostClassifier
                         clf = AdaBoostClassifier()
@@ -1060,11 +1060,11 @@ class NSGA2_CUSTOMIZED(NSGA2):
                         mask = self.problem.mask
 
                         y_zeros = np.zeros(X_test_pgd.shape[0])
-                        X_test_adv, new_bug_pred_prob_list, initial_bug_pred_prob_list = pgd_attack(clf, X_test_pgd, y_zeros, xl, xu, encoded_fields, labels_used, self.problem.customized_constraints, standardize, prev_X=self.problem.interested_unique_bugs, base_ind=0, unique_coeff=unique_coeff, mask=mask, param_for_recover_and_decode=param_for_recover_and_decode, eps=self.pgd_eps, adv_conf_th=adv_conf_th, attack_stop_conf=attack_stop_conf, associated_clf_id=associated_clf_id, X_test_pgd_ori=X_test_pgd_ori, consider_uniqueness=True)
+                        X_test_adv, new_bug_pred_prob_list, initial_bug_pred_prob_list = pgd_attack(clf, X_test_pgd, y_zeros, xl, xu, encoded_fields, labels_used, self.problem.customized_constraints, standardize, prev_X=self.problem.interested_unique_bugs, base_ind=0, unique_coeff=unique_coeff, mask=mask, param_for_recover_and_decode=param_for_recover_and_decode, eps=self.pgd_eps, adv_conf_th=adv_conf_th, attack_stop_conf=attack_stop_conf, associated_clf_id=associated_clf_id, X_test_pgd_ori=X_test_pgd_ori, consider_uniqueness=True, device_name=self.device_name)
 
                     else:
                         y_zeros = np.zeros(X_test_pgd.shape[0])
-                        X_test_adv, new_bug_pred_prob_list, initial_bug_pred_prob_list = pgd_attack(clf, X_test_pgd, y_zeros, xl, xu, encoded_fields, labels_used, self.problem.customized_constraints, standardize, eps=self.pgd_eps, adv_conf_th=adv_conf_th, attack_stop_conf=attack_stop_conf, associated_clf_id=associated_clf_id, X_test_pgd_ori=X_test_pgd_ori)
+                        X_test_adv, new_bug_pred_prob_list, initial_bug_pred_prob_list = pgd_attack(clf, X_test_pgd, y_zeros, xl, xu, encoded_fields, labels_used, self.problem.customized_constraints, standardize, eps=self.pgd_eps, adv_conf_th=adv_conf_th, attack_stop_conf=attack_stop_conf, associated_clf_id=associated_clf_id, X_test_pgd_ori=X_test_pgd_ori, device_name=self.device_name)
 
                     X_test_adv_processed = inverse_process_X(X_test_adv, standardize, one_hot_fields_len, partial, X_removed, kept_fields, removed_fields, enc, inds_to_encode, inds_non_encode, encoded_fields)
                     X_off = X_test_adv_processed
@@ -1513,6 +1513,7 @@ if __name__ == '__main__':
         run_info:
     '''
 
+
     if fuzzing_arguments.simulator == 'carla':
         from carla_specific_utils.scene_configs import customized_bounds_and_distributions
         from carla_specific_utils.setup_labels_and_bounds import generate_fuzzing_content
@@ -1531,9 +1532,10 @@ if __name__ == '__main__':
 
         # 'apollo_6_with_signal', 'apollo_6_modular'
         if fuzzing_arguments.ego_car_model not in ['apollo_6_with_signal', 'apollo_6_modular']:
-            print('not supported fuzzing_arguments.ego_car_model for svl', fuzzing_arguments.ego_car_model, 'set ot to apollo_6_modular')
+            print('not supported fuzzing_arguments.ego_car_model for svl:', fuzzing_arguments.ego_car_model, 'set ot to apollo_6_modular')
             fuzzing_arguments.ego_car_model = 'apollo_6_modular'
-        if fuzzing_arguments.route_type not in ['BorregasAve_forward', 'SanFrancisco_right']:
+        if fuzzing_arguments.route_type not in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_right']:
+            print('not supported fuzzing_arguments.route_type for svl:', fuzzing_arguments.route_type)
             fuzzing_arguments.route_type = 'BorregasAve_forward'
         fuzzing_arguments.scenario_type = 'default'
         fuzzing_arguments.ports = [8181]

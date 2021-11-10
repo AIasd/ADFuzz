@@ -246,8 +246,12 @@ class SimpleRegressionNet(nn.Module):
         else:
             return out
 
-def extract_embed(model, X):
-    X_torch = torch.from_numpy(X).cuda().float()
+def extract_embed(model, X, device_name=None):
+    if not device:
+        self.device = torch.device("cuda")
+    else:
+        self.device = torch.device(device_name)
+    X_torch = torch.from_numpy(X).to(device).float()
     output = model.extract_embed(X_torch)
     return output.cpu().detach().numpy()
 
@@ -302,7 +306,7 @@ def pgd_attack(
     unique_coeff=None,
     mask=None,
     param_for_recover_and_decode=None,
-    device=None,
+    device_name=None,
     eps=1.01,
     adv_conf_th=0,
     attack_stop_conf=1,
@@ -320,8 +324,11 @@ def pgd_attack(
     else:
         multiple_models = False
 
-    if not device:
+    if not device_name:
         device = torch.device("cuda")
+    else:
+        device = torch.device(device_name)
+
     n = len(images)
     encoded_fields_len = np.sum(encoded_fields)
 
@@ -565,6 +572,7 @@ def pgd_attack(
                         violated_constraints,
                         labels_used,
                         involved_labels,
+                        device=device
                     )
 
                     # print(ori_images.squeeze().cpu().numpy())
@@ -674,38 +682,41 @@ def train_net(
     batch_test=20,
     hidden_size=150,
     model_type="one_output",
-    device=None,
+    device_name=None,
     num_epochs=30
 ):
-    if not device:
+    if not device_name:
         device = torch.device("cuda")
+    else:
+        device = torch.device(device_name)
+
     input_size = X_train.shape[1]
 
 
     if model_type == "one_output":
         num_classes = 1
-        model = SimpleNet(input_size, hidden_size, num_classes)
+        model = SimpleNet(input_size, hidden_size, num_classes, device=device)
         criterion = nn.BCELoss()
         one_hot = False
     elif model_type == "BNN":
         num_classes = 1
-        model = BNN(input_size, num_classes)
+        model = BNN(input_size, num_classes, device=device)
         criterion = nn.BCELoss()
         one_hot = False
     elif model_type == "two_output":
         num_classes = 2
-        model = SimpleNetMulti(input_size, hidden_size, num_classes)
+        model = SimpleNetMulti(input_size, hidden_size, num_classes, device=device)
         criterion = nn.CrossEntropyLoss()
         one_hot = True
     elif model_type == "regression":
         num_classes = 1
-        model = SimpleRegressionNet(input_size, hidden_size, num_classes)
+        model = SimpleRegressionNet(input_size, hidden_size, num_classes, device=device)
         criterion = nn.MSELoss()
         one_hot = False
     else:
         raise "unknown model_type " + model_type
 
-    model.cuda()
+    model.to(device)
 
     # optimizer = torch.optim.LBFGS(model.parameters())
     optimizer = torch.optim.Adam(model.parameters())
@@ -773,7 +784,7 @@ def train_regression_net(
     model = SimpleRegressionNet(input_size, hidden_size, num_classes)
     criterion = nn.MSELoss()
 
-    model.cuda()
+    model.to(device)
 
     # optimizer = torch.optim.LBFGS(model.parameters())
     optimizer = torch.optim.Adam(model.parameters())
@@ -837,7 +848,7 @@ class linearRegression(torch.nn.Module):
         return out
 
 
-def project_into_constraints(x, violated_constraints, labels, involved_labels):
+def project_into_constraints(x, violated_constraints, labels, involved_labels, device=None):
     assert len(labels) == len(x), str(len(labels)) + " VS " + str(len(x))
     labels_to_id = {label: i for i, label in enumerate(labels)}
     # print(labels_to_id)
@@ -858,19 +869,19 @@ def project_into_constraints(x, violated_constraints, labels, involved_labels):
         A_train[i, ids] = np.array(constraint["coefficients"])
         y_train[i] = constraint["value"]
 
-    x_projected = LR(A_train, x_start, y_train)
+    x_projected = LR(A_train, x_start, y_train, device=device)
     x_new[involved_ids] = x_projected
     return x_new
 
 
-def LR(A_train, x_start, y_train):
+def LR(A_train, x_start, y_train, device=None):
     # A_train ~ m * r, constraints
     # x_start ~ r * 1, initial x
     # y_train ~ m * 1, target values
     # m = constraints number
     # r = number of variables involved
     # print('x_start.shape', x_start.shape)
-    x_start = torch.from_numpy(x_start).cuda().float()
+    x_start = torch.from_numpy(x_start).to(device).float()
 
     inputDim = A_train.shape[1]
     outputDim = 1
@@ -878,7 +889,8 @@ def LR(A_train, x_start, y_train):
     epochs = 300
     eps = 1e-7
     model = linearRegression(inputDim, outputDim, x_start)
-    model.cuda()
+
+    model.to(device)
 
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learningRate)
@@ -886,8 +898,8 @@ def LR(A_train, x_start, y_train):
     for epoch in range(epochs):
         # print('A_train.shape', A_train.shape)
 
-        inputs = torch.from_numpy(A_train).cuda().float()
-        labels = torch.from_numpy(y_train).cuda().float().unsqueeze(0)
+        inputs = torch.from_numpy(A_train).to(device).float()
+        labels = torch.from_numpy(y_train).to(device).float().unsqueeze(0)
 
         optimizer.zero_grad()
         outputs = model(inputs)

@@ -302,10 +302,10 @@ def receive_zmq(q, path_list, record_every_n_step):
                             with open(img_path, 'wb') as f_out_front_camera:
                                 f_out_front_camera.write(front_image)
 
-                            from PIL import Image
-                            img = Image.open(img_path)
-                            img = img.resize(img.size[0]//2, img.size[1]//2, Image.ANTIALIAS)
-                            img.save(img_path)
+                            # from PIL import Image
+                            # img = Image.open(img_path)
+                            # img = img.resize(img.size[0]//2, img.size[1]//2, Image.ANTIALIAS)
+                            # img.save(img_path)
 
 
                     except Exception:
