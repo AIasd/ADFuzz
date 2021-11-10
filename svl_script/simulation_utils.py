@@ -358,7 +358,7 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
             wps = []
             for wp in ped.waypoints:
                 loc = middle_point.position+lgsvl.Vector(wp.x, 0, wp.y)
-                wps.append(lgsvl.WalkWaypoint(loc, 0, wp.trigger_distance))
+                wps.append(lgsvl.WalkWaypoint(loc, 0, 0, wp.trigger_distance))
 
             state = lgsvl.AgentState()
             state.transform = ped_point
@@ -378,7 +378,7 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
             wps = []
             for wp in vehicle.waypoints:
                 loc = middle_point.position + lgsvl.Vector(wp.x, 0, wp.y)
-                wps.append(lgsvl.DriveWaypoint(loc, vehicle.speed, lgsvl.Vector(0, 0, 0), 0, False, wp.trigger_distance))
+                wps.append(lgsvl.DriveWaypoint(loc, vehicle.speed, 0, lgsvl.Vector(0, 0, 0), 0, False, wp.trigger_distance))
 
             state = lgsvl.AgentState()
             state.transform = vehicle_point
