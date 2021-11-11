@@ -79,6 +79,10 @@ from pymoo.model.duplicate import NoDuplicateElimination
 from pymoo.model.survival import Survival
 from pymoo.model.individual import Individual
 
+# disable pymoo optimization warning
+from pymoo.configuration import Configuration
+Configuration.show_compile_hint = False
+
 from pgd_attack import pgd_attack, train_net, train_regression_net, VanillaDataset
 from acquisition import map_acquisition
 
@@ -1537,7 +1541,9 @@ if __name__ == '__main__':
         if fuzzing_arguments.route_type not in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_right']:
             print('not supported fuzzing_arguments.route_type for svl:', fuzzing_arguments.route_type)
             fuzzing_arguments.route_type = 'BorregasAve_forward'
-        fuzzing_arguments.scenario_type = 'default'
+        if fuzzing_arguments.scenario_type not in ['default', 'turn_left_one_ped_and_one_vehicle']:
+            print('not supported fuzzing_arguments.scenario_type for svl:', fuzzing_arguments.scenario_type)
+            fuzzing_arguments.scenario_type = 'default'
         fuzzing_arguments.ports = [8181]
         fuzzing_arguments.root_folder = 'svl_script/run_results_svl'
 

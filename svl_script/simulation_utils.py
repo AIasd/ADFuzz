@@ -315,7 +315,10 @@ def receive_zmq(q, path_list, record_every_n_step):
 
 #######################################################################
 
-
+def rotate(x, y, rot_rad):
+    x_rot = x * np.cos(rot_rad) - y * np.sin(rot_rad)
+    y_rot = x * np.sin(rot_rad) + y * np.cos(rot_rad)
+    return x_rot, y_rot
 
 def start_simulation(customized_data, arguments, sim_specific_arguments, launch_server, episode_max_time):
 
@@ -334,7 +337,17 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
 
         try:
             sim.weather = lgsvl.WeatherState(rain=customized_data['rain'], fog=customized_data['fog'], wetness=customized_data['wetness'], cloudiness=customized_data['cloudiness'], damage=customized_data['damage'])
-            sim.set_time_of_day(customized_data['hour'], fixed=True)
+
+            from datetime import datetime
+            dt = datetime(
+                  year=2020,
+                  month=12,
+                  day=25,
+                  hour=int(customized_data['hour']),
+                  minute = 0,
+                  second = 0
+                )
+            sim.set_date_time(dt, fixed=True)
         except:
             import traceback
             traceback.print_exc()
@@ -342,6 +355,12 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
         ego, dv = initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, BRIDGE_PORT, events_path)
 
         middle_point = lgsvl.Transform(position=(destination.position + start.position) * 0.5, rotation=start.rotation)
+
+        for k, v in customized_data['customized_center_transforms'].items():
+            if v[0] == "absolute_location":
+                middle_point_i = lgsvl.Transform(position=lgsvl.Vector(v[1], v[2], v[3]), rotation=lgsvl.Vector(v[4], v[5], v[6]))
+                customized_data[k] = middle_point_i
+
 
 
         other_agents = []
@@ -352,40 +371,67 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
             state.velocity = lgsvl.Vector(0,0,0)
             state.angular_velocity = lgsvl.Vector(0,0,0)
 
-
             static_object = sim.controllable_add(static_types[static.model], state)
 
-        for ped in customized_data['pedestrians_list']:
-            ped_position_offset = lgsvl.Vector(ped.x, 0, ped.y)
+        for i, ped in enumerate(customized_data['pedestrians_list']):
+            center_key_i = "pedestrian_center_transform_"+str(i)
+            if center_key_i in customized_data:
+                middle_point_i = customized_data[center_key_i]
+            else:
+                middle_point_i = middle_point
+
+            # make it counter-clockwise
+            rot_angle = 360 - middle_point_i.rotation.y
+            rot_rad = np.deg2rad(rot_angle)
+            # convert from ego car coordinate to map coordinate
+            ped_x, ped_y = rotate(ped.x, ped.y, rot_rad)
+            ped_position_offset = lgsvl.Vector(ped_x, 0, ped_y)
             ped_rotation_offset = lgsvl.Vector(0, 0, 0)
-            ped_point = lgsvl.Transform(position=middle_point.position+ped_position_offset, rotation=middle_point.rotation+ped_rotation_offset)
+
+            ped_point = lgsvl.Transform(position=middle_point_i.position+ped_position_offset, rotation=middle_point_i.rotation+ped_rotation_offset)
 
             forward = lgsvl.utils.transform_to_forward(ped_point)
 
-            wps = []
+            wps = [lgsvl.WalkWaypoint(ped_point.position, 0, ped.waypoints[0].trigger_distance, ped.speed)]
             for wp in ped.waypoints:
-                loc = middle_point.position+lgsvl.Vector(wp.x, 0, wp.y)
-                wps.append(lgsvl.WalkWaypoint(loc, 0, 0, wp.trigger_distance))
+                wp_x, wp_y = rotate(wp.x, wp.y, rot_rad)
+                loc = middle_point_i.position+lgsvl.Vector(wp_x, 0, wp_y)
+                wps.append(lgsvl.WalkWaypoint(loc, 0, wp.trigger_distance, ped.speed))
 
             state = lgsvl.AgentState()
             state.transform = ped_point
-            state.velocity = ped.speed * forward
+            # state.velocity = ped.speed * forward
 
             p = sim.add_agent(pedestrian_types[ped.model], lgsvl.AgentType.PEDESTRIAN, state)
             p.follow(wps, False)
             other_agents.append(p)
 
         for vehicle in customized_data['vehicles_list']:
-            vehicle_position_offset = lgsvl.Vector(vehicle.x, 0, vehicle.y)
+            center_key_i = "vehicle_center_transform_"+str(i)
+            if center_key_i in customized_data:
+                middle_point_i = customized_data[center_key_i]
+            else:
+                middle_point_i = middle_point
+
+            # make it counter-clockwise
+            rot_angle = 360 - middle_point_i.rotation.y
+            rot_rad = np.deg2rad(rot_angle)
+            # convert from ego car coordinate to map coordinate
+            vehicle_x, vehicle_y = rotate(vehicle.x, vehicle.x, rot_rad)
+            vehicle_position_offset = lgsvl.Vector(vehicle_x, 0, vehicle_y)
             vehicle_rotation_offset = lgsvl.Vector(0, 0, 0)
-            vehicle_point = lgsvl.Transform(position=middle_point.position+vehicle_position_offset, rotation=middle_point.rotation+vehicle_rotation_offset)
+
+            vehicle_point = lgsvl.Transform(position=middle_point_i.position+vehicle_position_offset, rotation=middle_point_i.rotation+vehicle_rotation_offset)
 
             forward = lgsvl.utils.transform_to_forward(vehicle_point)
 
-            wps = []
+            wp_rotation = middle_point_i.rotation
+
+            wps = [lgsvl.DriveWaypoint(vehicle_point.position, vehicle.speed, 0, vehicle_point.rotation, 0, False, vehicle.waypoints[0].trigger_distance)]
             for wp in vehicle.waypoints:
-                loc = middle_point.position + lgsvl.Vector(wp.x, 0, wp.y)
-                wps.append(lgsvl.DriveWaypoint(loc, vehicle.speed, 0, lgsvl.Vector(0, 0, 0), 0, False, wp.trigger_distance))
+                wp_x, wp_y = rotate(wp.x, wp.y, rot_rad)
+                loc = middle_point_i.position + lgsvl.Vector(wp_x, 0, wp_y)
+                wps.append(lgsvl.DriveWaypoint(loc, vehicle.speed, 0, wp_rotation, 0, False, wp.trigger_distance))
 
             state = lgsvl.AgentState()
             state.transform = vehicle_point
@@ -404,12 +450,13 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
         # extra destination request to avoid previous request lost?
         dv.set_destination(destination.position.x, destination.position.z)
 
-        return sim
+        return sim, ego
 
     def run_sim_with_initialization(q, duration, time_scale):
-        sim = initialize_sim()
+        sim, ego = initialize_sim()
         print('start run sim')
         sim.run(time_limit=duration, time_scale=time_scale)
+        print('ego car transform:', ego.transform)
         q.put('end')
         return
 

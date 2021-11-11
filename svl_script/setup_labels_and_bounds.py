@@ -214,7 +214,15 @@ def customize_parameters(parameters, customized_parameters):
             parameters[k] = v
         else:
             # print(k, 'is not defined in the parameters.')
-            pass
+            continue
+
+def sanity_check(parameters, customized_parameters):
+    for k, v in customized_parameters.items():
+        if k not in parameters:
+            print(k, 'is not defined in the parameters.')
+            print('parameters', parameters)
+            raise
+
 
 def generate_fuzzing_content(customized_config):
     customized_parameters_bounds = customized_config['customized_parameters_bounds']
@@ -234,6 +242,8 @@ def generate_fuzzing_content(customized_config):
     customize_parameters(parameters_min_bounds, customized_parameters_bounds)
     customize_parameters(parameters_max_bounds, customized_parameters_bounds)
     customize_parameters(parameters_distributions, customized_parameters_distributions)
+
+    sanity_check([k for k in parameters_min_bounds]+[k for k in parameters_max_bounds]+[k for k in parameters_distributions], customized_parameters_bounds)
 
     search_space_info = emptyobject()
     assign_key_value_pairs(search_space_info, fixed_hyperparameters, parameters_min_bounds, parameters_max_bounds)
