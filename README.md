@@ -50,7 +50,7 @@ pip3 install pytorch-lightning==0.8.5
 Need to prepare data in csv format (A small dataset will be provided as an example).
 #### Run Fuzzing
 ```
-# NSGA2-UN
+# GA-UN
 python ga_fuzzing.py --simulator no_simulation --n_gen 10 --pop_size 20 --algorithm_name nsga2-un --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --n_offsprings 50
 
 # AVFuzzer
@@ -112,13 +112,17 @@ and finally run the channel_extraction
 Finally, in a third terminal:
 If using apollo with ground-truth traffic signal:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal
+python ga_fuzzing.py --simulator svl --n_gen 10 --pop_size 50 --algorithm_name nsga2-un --has_run_num 500 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type turn_left_one_ped_and_one_vehicle --record_every_n_step 5
 ```
 Or if using apollo with ground-truth perception:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_modular
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_modular_2gt --scenario_type turn_left_one_ped_and_one_vehicle --record_every_n_step 5
 ```
 
+Run AVFuzzer
+```
+python ga_fuzzing.py --simulator svl --n_gen 175 --pop_size 4 --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal --only_run_unique_cases 0
+```
 
 
 ### CARLA0.9.9+LBC
