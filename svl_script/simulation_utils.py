@@ -120,7 +120,7 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
                     # 'Traffic Light',
                     'Control'
                 ]
-            elif model_id == '2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921':
+            elif model_id in ['2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921', 'b20c0d8a-f310-46b2-a639-6ce6be4f2b14']:
                 modules = [
                     'Localization',
                     # 'Perception',
