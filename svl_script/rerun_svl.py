@@ -1,30 +1,26 @@
 import sys
 import os
 sys.path.append('pymoo')
-carla_root = '../carla_0994_no_rss'
-sys.path.append(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
-sys.path.append(carla_root+'/PythonAPI/carla')
-sys.path.append(carla_root+'/PythonAPI')
-
-sys.path.append('leaderboard')
-sys.path.append('leaderboard/team_code')
-sys.path.append('scenario_runner')
-sys.path.append('carla_project')
-sys.path.append('carla_project/src')
-
 sys.path.append('fuzzing_utils')
-sys.path.append('carla_specific_utils')
-# os.system('export PYTHONPATH=/home/zhongzzy9/anaconda3/envs/carla99/bin/python')
 
 sys.path.append('..')
+carla_lbc_root = 'carla_lbc'
+sys.path.append(carla_lbc_root)
+sys.path.append(carla_lbc_root+'/leaderboard')
+sys.path.append(carla_lbc_root+'/leaderboard/team_code')
+sys.path.append(carla_lbc_root+'/scenario_runner')
+sys.path.append(carla_lbc_root+'/carla_project')
+sys.path.append(carla_lbc_root+'/carla_project/src')
+sys.path.append(carla_lbc_root+'/carla_specific_utils')
+
+sys.path.append('.')
 
 import pickle
 from datetime import datetime
 from customized_utils import make_hierarchical_dir
 from svl_specific import run_svl_simulation
 
-parent_folder = 'run_results_svl/nsga2-un/BorregasAve_forward/default/apollo_6_with_signal/0.25_500_0.1_0.5'
-parent_folder = os.path.join(parent_folder, 'bugs')
+parent_folder = 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_11_15_20_16_50,2_2_none_4_coeff_0.0_0.1_0.5_only_unique_1/rerun'
 
 now = datetime.now()
 dt_time_str = now.strftime("%Y_%m_%d_%H_%M_%S")
@@ -53,7 +49,7 @@ for subfolder in os.listdir(parent_folder):
             launch_server = True
             port = 2003
 
-            fuzzing_arguments.root_folder = 'rerun_svl'
+            fuzzing_arguments.root_folder = 'svl_script/rerun_svl'
             fuzzing_arguments.parent_folder = make_hierarchical_dir([fuzzing_arguments.root_folder, fuzzing_arguments.algorithm_name, fuzzing_arguments.route_type, fuzzing_arguments.scenario_type, fuzzing_arguments.ego_car_model, dt_time_str])
             fuzzing_arguments.mean_objectives_across_generations_path = os.path.join(parent_folder, 'mean_objectives_across_generations.txt')
 

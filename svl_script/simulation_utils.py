@@ -259,6 +259,9 @@ def receive_zmq(q, path_list, record_every_n_step):
         with open(perception_obstacles_path, 'a') as f_out_perception_obstacles:
             with open(deviations_path, 'a') as f_out:
                 while True:
+                    data_str_odometry = None
+                    data_str_perception_obstacles = None
+
                     try:
                         cmd = q.get(timeout=0.0001)
                         if cmd == 'end':
@@ -273,11 +276,17 @@ def receive_zmq(q, path_list, record_every_n_step):
 
                     try:
                         data_str_odometry = socket_odometry.recv_string(flags=zmq.NOBLOCK)
-                        data_str_perception_obstacles = socket_perception_obstacles.recv_string(flags=zmq.NOBLOCK)
-
                         f_out_odometry.write(data_str_odometry+'\n')
-                        f_out_perception_obstacles.write(data_str_perception_obstacles+'\n')
+                    except Exception:
+                        pass
 
+                    try:
+                        data_str_perception_obstacles = socket_perception_obstacles.recv_string(flags=zmq.NOBLOCK)
+                        f_out_perception_obstacles.write(data_str_perception_obstacles+'\n')
+                    except Exception:
+                        pass
+
+                    if data_str_odometry and data_str_perception_obstacles:
                         odometry_tokens = data_str_odometry.split(':')[1].split(',')
                         perception_obstacles_tokens = data_str_perception_obstacles.split(':')[1].split(',')
                         # detected a non-ego object
@@ -292,7 +301,7 @@ def receive_zmq(q, path_list, record_every_n_step):
                                     f_out.write('min_d,'+str(min_ego_i_d)+'\n')
                                     print('min_d', min_ego_i_d)
 
-
+                    try:
                         data_str_front_camera = socket_front_camera.recv(flags=zmq.NOBLOCK)
                         timestamp_sec, sequence_num, front_image = data_str_front_camera.split(b':data_delimiter:')
 
@@ -301,17 +310,11 @@ def receive_zmq(q, path_list, record_every_n_step):
                             img_path = os.path.join(main_camera_folder, sequence_num.decode()+'_'+timestamp_sec.decode()+'.jpg')
                             with open(img_path, 'wb') as f_out_front_camera:
                                 f_out_front_camera.write(front_image)
-
-                            # from PIL import Image
-                            # img = Image.open(img_path)
-                            # img = img.resize(img.size[0]//2, img.size[1]//2, Image.ANTIALIAS)
-                            # img.save(img_path)
-
-
                     except Exception:
-                        # import traceback
-                        # print(traceback.format_exc())
-                        continue
+                        pass
+
+
+
 
 #######################################################################
 
@@ -456,7 +459,8 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
         sim, ego = initialize_sim()
         print('start run sim')
         sim.run(time_limit=duration, time_scale=time_scale)
-        print('ego car transform:', ego.transform)
+        print('ego car final transform:', ego.transform)
+        time.sleep(1)
         q.put('end')
         return
 

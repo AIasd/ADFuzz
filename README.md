@@ -112,17 +112,30 @@ and finally run the channel_extraction
 Finally, in a third terminal:
 If using apollo with ground-truth traffic signal:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 100
 ```
 Or if using apollo with ground-truth perception:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_modular_2gt --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_modular_2gt --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 100
 ```
 
-Run AVFuzzer
+Or if running AVFuzzer
 ```
 python ga_fuzzing.py --simulator svl --n_gen 175 --pop_size 4 --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal --only_run_unique_cases 0
 ```
+
+
+#### Rerun
+```
+python svl_script/rerun_svl.py
+```
+
+
+#### Auxiliary
+[Cyber Recorder](https://github.com/ApolloAuto/apollo/blob/master/docs/cyber/CyberRT_Developer_Tools.md)
+
+
+
 
 
 ### CARLA0.9.9+LBC
