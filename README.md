@@ -1,7 +1,14 @@
 # ADFuzz
 
 ## Introduction
-A Software Package for Fuzzing Autonomous Driving Systems in Simulators
+A open-source software package for fuzzing autonomous driving systems in high-fidelity simulators. We are currently working on supporting more stacks and fuzzing algorithms. Please contact us if you are interested in contributing.
+
+## Current support of stack
+- Apollo(master) + SVL 2021.3
+- LBC + CARLA 0.9.9
+- No Simulation
+
+## Current support of algorithms (TBD)
 
 
 
