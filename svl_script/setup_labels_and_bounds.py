@@ -47,6 +47,7 @@ time_fields = [
 waypoints_num_limit = 1
 
 waypoint_fields = [
+    ("idle", "real", 0, 20),
     ("trigger_distance", "real", 0, 20),
     ("waypoint_x", "real", -20, 20),
     ("waypoint_y", "real", -20, 20),

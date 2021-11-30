@@ -112,16 +112,16 @@ and finally run the channel_extraction
 Finally, in a third terminal:
 If using apollo with ground-truth traffic signal:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 100
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name random --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 50
 ```
 Or if using apollo with ground-truth perception:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_modular_2gt --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 100
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_modular --route_type 'BorregasAve_left' --scenario_type 'one_ped_crossing' --record_every_n_step 5 --n_offsprings 100
 ```
 
 Or if running AVFuzzer
 ```
-python ga_fuzzing.py --simulator svl --n_gen 175 --pop_size 4 --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 30 --ego_car_model apollo_6_with_signal --only_run_unique_cases 0
+python ga_fuzzing.py --simulator svl --n_gen 50 --pop_size 4 --algorithm_name avfuzzer --has_run_num 100 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --only_run_unique_cases 0
 ```
 
 
@@ -177,3 +177,21 @@ python ga_fuzzing.py -p 2021 -s 8795 -d 8796 --n_gen 15 --pop_size 50 -r 'town07
 # AVFuzzer
 python ga_fuzzing.py -p 2018 -s 8793 -d 8794 --n_gen 200 --pop_size 4 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 0 --n_offsprings 50
 ```
+
+
+## Citing
+If you use the project in your work, please consider citing it with:
+```
+@misc{zhong2021neural,
+      title={Neural Network Guided Evolutionary Fuzzing for Finding Traffic Violations of Autonomous Vehicles},
+      author={Ziyuan Zhong and Gail Kaiser and Baishakhi Ray},
+      year={2021},
+      eprint={2109.06126},
+      archivePrefix={arXiv},
+      primaryClass={cs.SE}
+}
+```
+
+
+## Reference
+This repo is partially built on top of [Carla Challenge (with LBC supported)](https://github.com/bradyz/2020_CARLA_challenge) and [pymoo](https://github.com/anyoptimization/pymoo)

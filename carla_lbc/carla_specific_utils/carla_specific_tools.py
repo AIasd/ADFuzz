@@ -230,7 +230,7 @@ def start_server(port):
             #         subprocess.run('kill -9 '+pid_to_kill, shell=True)
             # else:
             #     subprocess.run('kill $(lsof -t -i:'+str(port)+')', shell=True)
-            subprocess.run("kill $(lsof -t -i:" + str(port) + ")", shell=True)
+            subprocess.run("kill -9 $(lsof -t -i:" + str(port) + ")", shell=True)
             print("-" * 20, "kill server at port", port)
             time.sleep(2)
         except:

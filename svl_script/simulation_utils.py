@@ -120,7 +120,7 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
                     # 'Traffic Light',
                     'Control'
                 ]
-            elif model_id in ['2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921', 'b20c0d8a-f310-46b2-a639-6ce6be4f2b14']:
+            elif model_id in ['2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921', 'f0daed3e-4b1e-46ce-91ec-21149fa31758']:
                 modules = [
                     'Localization',
                     # 'Perception',
@@ -229,7 +229,7 @@ def bind_socket(socket, port_num):
             socket.bind("tcp://*:"+str(port_num))
             break
         except:
-            subprocess.run("kill $(lsof -t -i:" + str(port_num) + ")", shell=True)
+            subprocess.run("kill -9 $(lsof -t -i:" + str(port_num) + " -sTCP:LISTEN)", shell=True)
 
 def receive_zmq(q, path_list, record_every_n_step):
     import zmq
@@ -395,16 +395,23 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
 
             forward = lgsvl.utils.transform_to_forward(ped_point)
 
-            wps = [lgsvl.WalkWaypoint(ped_point.position, 0, ped.waypoints[0].trigger_distance, ped.speed)]
-            for wp in ped.waypoints:
+            wps = [lgsvl.WalkWaypoint(position=ped_point.position, idle=ped.waypoints[0].idle, trigger_distance=ped.waypoints[0].trigger_distance, speed=ped.speed)]
+
+            # to avoid pedestrian going off ground
+            middle_point_i.position.y -= 0.1
+
+            for j, wp in enumerate(ped.waypoints):
+                j_next = np.min([j+1, len(ped.waypoints)-1])
+                wp_next = ped.waypoints[j_next]
+
                 wp_x, wp_y = rotate(wp.x, wp.y, rot_rad)
                 loc = middle_point_i.position+lgsvl.Vector(wp_x, 0, wp_y)
-                wps.append(lgsvl.WalkWaypoint(loc, 0, wp.trigger_distance, ped.speed))
+                wps.append(lgsvl.WalkWaypoint(position=loc, idle=wp_next.idle, trigger_distance=wp_next.trigger_distance, speed=ped.speed))
 
             state = lgsvl.AgentState()
             state.transform = ped_point
             # state.velocity = ped.speed * forward
-
+            print('\n'*3, 'ped.model', ped.model, '\n'*3)
             p = sim.add_agent(pedestrian_types[ped.model], lgsvl.AgentType.PEDESTRIAN, state)
             p.follow(wps, False)
             other_agents.append(p)
@@ -415,6 +422,9 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
                 middle_point_i = customized_data[center_key_i]
             else:
                 middle_point_i = middle_point
+
+
+
 
             # make it counter-clockwise
             rot_angle = 360 - middle_point_i.rotation.y
@@ -430,14 +440,22 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
 
             wp_rotation = middle_point_i.rotation
 
-            wps = [lgsvl.DriveWaypoint(vehicle_point.position, vehicle.speed, 0, vehicle_point.rotation, 0, False, vehicle.waypoints[0].trigger_distance)]
-            for wp in vehicle.waypoints:
+            wps = [lgsvl.DriveWaypoint(position=vehicle_point.position, speed=vehicle.speed, acceleration=0, angle=vehicle_point.rotation, idle=vehicle.waypoints[0].idle, deactivate=False, trigger_distance=vehicle.waypoints[0].trigger_distance)]
+
+            # to avoid vehicle going underground
+            middle_point_i.position.y += 0.3
+
+            for j, wp in enumerate(vehicle.waypoints):
+                j_next = np.min([j+1, len(vehicle.waypoints)-1])
+                wp_next = vehicle.waypoints[j_next]
+
                 wp_x, wp_y = rotate(wp.x, wp.y, rot_rad)
-                loc = middle_point_i.position + lgsvl.Vector(wp_x, 0, wp_y)
-                wps.append(lgsvl.DriveWaypoint(loc, vehicle.speed, 0, wp_rotation, 0, False, wp.trigger_distance))
+                pos = middle_point_i.position + lgsvl.Vector(wp_x, 0, wp_y)
+                wps.append(lgsvl.DriveWaypoint(position=pos, speed=vehicle.speed, acceleration=0, angle=wp_rotation, idle=wp_next.idle, deactivate=False, trigger_distance=wp_next.trigger_distance))
 
             state = lgsvl.AgentState()
             state.transform = vehicle_point
+            print('\n'*3, 'vehicle.model', vehicle.model, '\n'*3)
             p = sim.add_agent(vehicle_types[vehicle.model], lgsvl.AgentType.NPC, state)
             p.follow(wps, False)
             other_agents.append(p)
@@ -453,13 +471,18 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
         # extra destination request to avoid previous request lost?
         dv.set_destination(destination.position.x, destination.position.z)
 
-        return sim, ego
+        return sim, ego, destination
 
     def run_sim_with_initialization(q, duration, time_scale):
-        sim, ego = initialize_sim()
+        sim, ego, destination = initialize_sim()
         print('start run sim')
         sim.run(time_limit=duration, time_scale=time_scale)
-        print('ego car final transform:', ego.transform)
+
+        d_to_dest = norm_2d(ego.transform.position, destination.position)
+        if d_to_dest > 10:
+            with open(events_path, 'a') as f_out:
+                f_out.write('fail_to_finish,'+str(d_to_dest))
+        print('ego car final transform:', ego.transform, 'destination', destination, 'd_to_dest', d_to_dest)
         time.sleep(1)
         q.put('end')
         return

@@ -4,22 +4,26 @@ static_types = [
 
 # walker modifiable attributes: speed: float
 pedestrian_types = [
-    'Bob',
-    'Bill',
-    'EntrepreneurFemale',
-    'Howard',
-    'Johny',
-    'Jun',
+    # 'Deer',
+    # 'Turkey',
+    # 'SegwayKickScooterMaxG30LP',
+    # 'Bill',
+    # 'Bob',
+    # 'EntrepreneurFemale',
+    # 'Howard',
+    # 'Johny',
+    # 'Jun',
     'Pamela',
     'Presley',
     'Robin',
     'Stephen',
-    'Yun',
-    'Zoe'
+    # 'Yun',
+    # 'Zoe'
 ]
 
 # vehicle types
 car_types = [
+    # 'Bicyclist'
     'Sedan',
     'SUV',
     'Jeep',
@@ -27,8 +31,8 @@ car_types = [
 ]
 
 large_car_types = [
-    # 'SchoolBus',
-    # 'BoxTruck'
+    'SchoolBus',
+    'BoxTruck'
 ]
 
 

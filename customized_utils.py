@@ -299,7 +299,7 @@ def exit_handler(ports):
     for port in ports:
         while is_port_in_use(port):
             try:
-                subprocess.run("kill $(lsof -t -i :" + str(port) + ")", shell=True)
+                subprocess.run("kill -9 $(lsof -t -i :" + str(port) + ")", shell=True)
                 # subprocess.run("sudo kill $(lsof -t -i :" + str(port) + ")", shell=True)
                 print("-" * 20, "kill server at port", port)
             except:

@@ -67,8 +67,8 @@ def convert_x_to_customized_data(
 
             pedestrian_waypoints_i = []
             for _ in range(waypoints_num_limit):
-                pedestrian_waypoints_i.append(Waypoint(x[ind], x[ind+1], x[ind+2]))
-                ind += 3
+                pedestrian_waypoints_i.append(Waypoint(x[ind], x[ind+1], x[ind+2], x[ind+3]))
+                ind += 4
 
             pedestrian_i = Pedestrian(
                 model=pedestrian_type_i,
@@ -81,7 +81,7 @@ def convert_x_to_customized_data(
             pedestrians_list.append(pedestrian_i)
 
         else:
-            ind += 4 + waypoints_num_limit * 3
+            ind += 4 + waypoints_num_limit * 4
 
     # vehicles
     vehicles_list = []
@@ -95,8 +95,8 @@ def convert_x_to_customized_data(
 
             vehicle_waypoints_i = []
             for _ in range(waypoints_num_limit):
-                vehicle_waypoints_i.append(Waypoint(x[ind], x[ind+1], x[ind+2]))
-                ind += 3
+                vehicle_waypoints_i.append(Waypoint(x[ind], x[ind+1], x[ind+2], x[ind+3]))
+                ind += 4
 
             vehicle_i = Vehicle(
                 model=vehicle_type_i,
@@ -109,7 +109,7 @@ def convert_x_to_customized_data(
             vehicles_list.append(vehicle_i)
 
         else:
-            ind += 4 + waypoints_num_limit * 3
+            ind += 4 + waypoints_num_limit * 4
 
 
 
@@ -182,10 +182,13 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
         route_completion = False
         with open(events_path, 'r') as f_in:
             tokens = f_in.read().split('\n')[0].split(',')
-            _, ego_linear_speed, object_type, x, y = tokens
-            ego_linear_speed, x, y = float(ego_linear_speed), float(x), float(y)
-        if ego_linear_speed > 0.1:
-            is_collision = 1
+            if tokens[0] == 'fail_to_finish':
+                pass
+            else:
+                _, ego_linear_speed, object_type, x, y = tokens
+                ego_linear_speed, x, y = float(ego_linear_speed), float(x), float(y)
+                if ego_linear_speed > 0.1:
+                    is_collision = 1
 
 
     # limit impact of too large values
@@ -512,7 +515,7 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
     elif ego_car_model == 'apollo_6_modular':
         model_id = '2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921'
     elif ego_car_model == 'apollo_6_modular_2gt':
-        model_id = 'b20c0d8a-f310-46b2-a639-6ce6be4f2b14'
+        model_id = 'f0daed3e-4b1e-46ce-91ec-21149fa31758'
     else:
         print('ego car model is invalid:', ego_car_model)
         raise
@@ -534,10 +537,14 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
 
 
     if parent_folder:
-        is_bug = check_bug(objectives)
-        if is_bug:
+        if check_bug(objectives):
+            is_bug = True
             bug_type, bug_str = classify_bug_type(objectives, object_type)
+        # elif not route_completion:
+        #     is_bug = True
+        #     bug_type, bug_str = 5, 'fail to complete'
         else:
+            is_bug = False
             bug_type, bug_str = None, None
         if is_bug:
             with open(mean_objectives_across_generations_path, 'a') as f_out:

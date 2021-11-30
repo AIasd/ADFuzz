@@ -1541,7 +1541,7 @@ if __name__ == '__main__':
         if fuzzing_arguments.route_type not in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_right']:
             print('not supported fuzzing_arguments.route_type for svl:', fuzzing_arguments.route_type)
             fuzzing_arguments.route_type = 'BorregasAve_forward'
-        if fuzzing_arguments.scenario_type not in ['default', 'turn_left_one_ped_and_one_vehicle']:
+        if fuzzing_arguments.scenario_type not in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing']:
             print('not supported fuzzing_arguments.scenario_type for svl:', fuzzing_arguments.scenario_type)
             fuzzing_arguments.scenario_type = 'default'
         fuzzing_arguments.ports = [8181]

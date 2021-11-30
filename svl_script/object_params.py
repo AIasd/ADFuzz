@@ -1,5 +1,6 @@
 class Waypoint:
-    def __init__(self, trigger_distance, x, y):
+    def __init__(self, idle, trigger_distance, x, y):
+        self.idle = idle
         self.trigger_distance = trigger_distance
         self.x = x
         self.y = y
