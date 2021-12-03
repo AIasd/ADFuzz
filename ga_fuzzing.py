@@ -55,7 +55,7 @@ from distutils.dir_util import copy_tree
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 from scipy.stats import rankdata
-
+from multiprocessing import Process, Manager, set_start_method
 
 
 from pymoo.model.problem import Problem
@@ -95,6 +95,37 @@ set_general_seed(seed=fuzzing_arguments.random_seed)
 # random_seeds = [0, 10, 20]
 rng = np.random.default_rng(fuzzing_arguments.random_seed)
 
+def fun(obj, x, launch_server, counter, port, return_dict):
+    dt = obj.dt
+    estimator = obj.estimator
+    critical_unique_leaves = obj.critical_unique_leaves
+    customized_constraints = obj.customized_constraints
+    labels = obj.labels
+
+    default_objectives = obj.fuzzing_arguments.default_objectives
+    run_simulation = obj.run_simulation
+    fuzzing_content = obj.fuzzing_content
+    fuzzing_arguments = obj.fuzzing_arguments
+    sim_specific_arguments = obj.sim_specific_arguments
+    dt_arguments = obj.dt_arguments
+
+
+    not_critical_region = dt and not is_critical_region(x, estimator, critical_unique_leaves)
+    violate_constraints, _ = if_violate_constraints(x, customized_constraints, labels, verbose=True)
+    if not_critical_region or violate_constraints:
+        returned_data = [default_objectives, None, 0]
+    else:
+        objectives, run_info  = run_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_arguments, dt_arguments, launch_server, counter, port)
+
+        print('\n'*3)
+        print("counter, run_info['is_bug'], run_info['bug_type'], objectives", counter, run_info['is_bug'], run_info['bug_type'], objectives)
+        print('\n'*3)
+
+        # correct_travel_dist(x, labels, customized_data['tmp_travel_dist_file'])
+        returned_data = [objectives, run_info, 1]
+    if return_dict is not None:
+        return_dict['returned_data'] = returned_data
+    return returned_data
 
 
 class MyProblem(Problem):
@@ -162,8 +193,6 @@ class MyProblem(Problem):
             self.has_run_list = []
 
 
-
-
         self.labels = fuzzing_content.labels
         self.mask = fuzzing_content.mask
         self.parameters_min_bounds = fuzzing_content.parameters_min_bounds
@@ -191,32 +220,14 @@ class MyProblem(Problem):
 
 
 
+
     def _evaluate(self, X, out, *args, **kwargs):
         objective_weights = self.objective_weights
         customized_center_transforms = self.customized_center_transforms
 
         episode_max_time = self.episode_max_time
 
-        parameters_min_bounds = self.parameters_min_bounds
-        parameters_max_bounds = self.parameters_max_bounds
-        labels = self.labels
-        mask = self.mask
-        xl = self.xl
-        xu = self.xu
-        customized_constraints = self.customized_constraints
-
-        dt = self.dt
-        estimator = self.estimator
-        critical_unique_leaves = self.critical_unique_leaves
-
-
-        run_simulation = self.run_simulation
-        fuzzing_content = self.fuzzing_content
-        sim_specific_arguments = self.sim_specific_arguments
-        dt_arguments = self.dt_arguments
-
         default_objectives = self.fuzzing_arguments.default_objectives
-
         standardize_objective = self.fuzzing_arguments.standardize_objective
         normalize_objective = self.fuzzing_arguments.normalize_objective
         traj_dist_metric = self.fuzzing_arguments.traj_dist_metric
@@ -224,32 +235,9 @@ class MyProblem(Problem):
 
         all_final_generated_transforms_list = []
 
-
-
-        def fun(x, launch_server, counter, port, return_dict):
-            not_critical_region = dt and not is_critical_region(x, estimator, critical_unique_leaves)
-            violate_constraints, _ = if_violate_constraints(x, customized_constraints, labels, verbose=True)
-            if not_critical_region or violate_constraints:
-                returned_data = [default_objectives, None, 0]
-            else:
-                objectives, run_info  = run_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_arguments, dt_arguments, launch_server, counter, port)
-
-                print('\n'*3)
-                print("counter, run_info['is_bug'], run_info['bug_type'], objectives", counter, run_info['is_bug'], run_info['bug_type'], objectives)
-                print('\n'*3)
-
-                # correct_travel_dist(x, labels, customized_data['tmp_travel_dist_file'])
-                returned_data = [objectives, run_info, 1]
-            if return_dict is not None:
-                return_dict['returned_data'] = returned_data
-            return returned_data
-
-
-
         # non-dask subprocess implementation
         # rng = np.random.default_rng(random_seeds[1])
 
-        from multiprocessing import Process, Manager
         tmp_run_info_list = []
         x_sublist = []
         objectives_sublist_non_traj = []
@@ -269,7 +257,7 @@ class MyProblem(Problem):
             manager = Manager()
             return_dict = manager.dict()
             try:
-                p = Process(target=fun, args=(x, launch_server, self.counter, port, return_dict))
+                p = Process(target=fun, args=(self, x, launch_server, self.counter, port, return_dict))
                 p.start()
                 p.join(240)
                 if p.is_alive():
@@ -314,7 +302,7 @@ class MyProblem(Problem):
 
 
         job_results, self.x_list, self.objectives_list, self.trajectory_vector_list = get_job_results(tmp_run_info_list, x_sublist, objectives_sublist_non_traj, trajectory_vector_sublist, self.x_list, self.objectives_list, self.trajectory_vector_list, traj_dist_metric)
-        print('self.objectives_list', self.objectives_list)
+        # print('self.objectives_list', self.objectives_list)
 
 
         # hack:
@@ -1016,10 +1004,10 @@ class NSGA2_CUSTOMIZED(NSGA2):
                     cur_y = y_train
 
                     if self.adv_conf_th < 0 and self.rank_mode in ['adv_nn']:
-                        print(sorted(prob_train, reverse=True))
-                        print('cur_y', cur_y)
-                        print('np.abs(self.adv_conf_th)', np.abs(self.adv_conf_th))
-                        print(int(np.sum(cur_y)//np.abs(self.adv_conf_th)))
+                        # print(sorted(prob_train, reverse=True))
+                        # print('cur_y', cur_y)
+                        # print('np.abs(self.adv_conf_th)', np.abs(self.adv_conf_th))
+                        # print(int(np.sum(cur_y)//np.abs(self.adv_conf_th)))
                         adv_conf_th = sorted(prob_train, reverse=True)[int(np.sum(cur_y)//np.abs(self.adv_conf_th))]
                         attack_stop_conf = np.max([self.attack_stop_conf, adv_conf_th])
                     if self.adv_conf_th > attack_stop_conf:
@@ -1517,7 +1505,7 @@ if __name__ == '__main__':
         run_info:
     '''
 
-
+    set_start_method('spawn')
     if fuzzing_arguments.simulator == 'carla':
         from carla_specific_utils.scene_configs import customized_bounds_and_distributions
         from carla_specific_utils.setup_labels_and_bounds import generate_fuzzing_content
