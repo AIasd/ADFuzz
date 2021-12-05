@@ -267,19 +267,18 @@ def receive_zmq(q, path_list, record_every_n_step):
                     cmd = q.get(timeout=0.0001)
                     if cmd == 'end':
                         with open(deviations_path, 'a') as f_out:
-                            for k in perception_obstacles_tokens:
+                            for k in perception_obstacles_dict:
                                 if k in odometry_dict:
-                                    ego_x, ego_y, ego_z = perception_obstacles_tokens[k]
-                                    npc_num = len(odometry_dict[k])
+                                    ego_x, ego_y, ego_z = odometry_dict[k]
+                                    npc_num = len(perception_obstacles_dict[k])
                                     for i in range(npc_num):
-                                        i_x, i_y, i_z = odometry_dict[k][i]
+                                        i_x, i_y, i_z = perception_obstacles_dict[k][i]
 
                                         ego_i_d = get_d(ego_x, ego_y, ego_z, i_x, i_y, i_z)
                                         if ego_i_d < min_ego_i_d:
                                             min_ego_i_d = ego_i_d
                                             f_out.write('min_d,'+str(min_ego_i_d)+'\n')
-                                            print('min_d', min_ego_i_d)
-
+                                            print('time step', k, 'min_d', min_ego_i_d)
                         socket_odometry.close()
                         socket_perception_obstacles.close()
                         socket_front_camera.close()
