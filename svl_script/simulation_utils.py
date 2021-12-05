@@ -255,63 +255,83 @@ def receive_zmq(q, path_list, record_every_n_step):
     print('finish binding sockets')
 
     min_ego_i_d = 100
+    odometry_dict = {}
+    perception_obstacles_dict = {}
     with open(odometry_path, 'a') as f_out_odometry:
         with open(perception_obstacles_path, 'a') as f_out_perception_obstacles:
-            with open(deviations_path, 'a') as f_out:
-                while True:
-                    data_str_odometry = None
-                    data_str_perception_obstacles = None
+            while True:
+                data_str_odometry = None
+                data_str_perception_obstacles = None
 
-                    try:
-                        cmd = q.get(timeout=0.0001)
-                        if cmd == 'end':
-                            socket_odometry.close()
-                            socket_perception_obstacles.close()
-                            socket_front_camera.close()
-                            context.term()
-                            print('free sockets and context')
-                            return
-                    except:
-                        pass
+                try:
+                    cmd = q.get(timeout=0.0001)
+                    if cmd == 'end':
+                        with open(deviations_path, 'a') as f_out:
+                            for k in perception_obstacles_tokens:
+                                if k in odometry_dict:
+                                    ego_x, ego_y, ego_z = perception_obstacles_tokens[k]
+                                    npc_num = len(odometry_dict[k])
+                                    for i in range(npc_num):
+                                        i_x, i_y, i_z = odometry_dict[k][i]
 
-                    try:
-                        data_str_odometry = socket_odometry.recv_string(flags=zmq.NOBLOCK)
-                        f_out_odometry.write(data_str_odometry+'\n')
-                    except Exception:
-                        pass
+                                        ego_i_d = get_d(ego_x, ego_y, ego_z, i_x, i_y, i_z)
+                                        if ego_i_d < min_ego_i_d:
+                                            min_ego_i_d = ego_i_d
+                                            f_out.write('min_d,'+str(min_ego_i_d)+'\n')
+                                            print('min_d', min_ego_i_d)
 
-                    try:
-                        data_str_perception_obstacles = socket_perception_obstacles.recv_string(flags=zmq.NOBLOCK)
-                        f_out_perception_obstacles.write(data_str_perception_obstacles+'\n')
-                    except Exception:
-                        pass
+                        socket_odometry.close()
+                        socket_perception_obstacles.close()
+                        socket_front_camera.close()
+                        context.term()
+                        print('free sockets and context')
+                        return
+                except:
+                    pass
 
-                    if data_str_odometry and data_str_perception_obstacles:
-                        odometry_tokens = data_str_odometry.split(':')[1].split(',')
-                        perception_obstacles_tokens = data_str_perception_obstacles.split(':')[1].split(',')
-                        # detected a non-ego object
-                        npc_num = int(perception_obstacles_tokens[2])
-                        if npc_num > 0:
-                            ego_x, ego_y, ego_z = [float(x) for x in odometry_tokens[2:]]
-                            for i in range(npc_num):
-                                i_x, i_y, i_z = [float(x) for x in perception_obstacles_tokens[3*(1+i):3*(2+i)]]
-                                ego_i_d = get_d(ego_x, ego_y, ego_z, i_x, i_y, i_z)
-                                if ego_i_d < min_ego_i_d:
-                                    min_ego_i_d = ego_i_d
-                                    f_out.write('min_d,'+str(min_ego_i_d)+'\n')
-                                    print('min_d', min_ego_i_d)
+                try:
+                    data_str_odometry = socket_odometry.recv_string(flags=zmq.NOBLOCK)
+                    f_out_odometry.write(data_str_odometry+'\n')
 
-                    try:
-                        data_str_front_camera = socket_front_camera.recv(flags=zmq.NOBLOCK)
-                        timestamp_sec, sequence_num, front_image = data_str_front_camera.split(b':data_delimiter:')
+                    odometry_tokens = data_str_odometry.split(':')[1].split(',')
+                    ego_x, ego_y, ego_z = [float(x) for x in odometry_tokens[2:]]
+                    time_step = int(perception_obstacles_tokens[1])
+                    odometry_dict[time_step] = (ego_x, ego_y, ego_z)
+                except Exception:
+                    pass
 
-                        # record image after warm-up stage
-                        if int(sequence_num) > 150 and int(sequence_num) % record_every_n_step == 0:
-                            img_path = os.path.join(main_camera_folder, sequence_num.decode()+'_'+timestamp_sec.decode()+'.jpg')
-                            with open(img_path, 'wb') as f_out_front_camera:
-                                f_out_front_camera.write(front_image)
-                    except Exception:
-                        pass
+                try:
+                    data_str_perception_obstacles = socket_perception_obstacles.recv_string(flags=zmq.NOBLOCK)
+                    f_out_perception_obstacles.write(data_str_perception_obstacles+'\n')
+
+                    perception_obstacles_tokens = data_str_perception_obstacles.split(':')[1].split(',')
+                    npc_num = int(perception_obstacles_tokens[2])
+                    if npc_num > 0:
+                        time_step = int(perception_obstacles_tokens[1])
+                        for i in range(npc_num):
+                            i_x, i_y, i_z = [float(x) for x in perception_obstacles_tokens[3*(1+i):3*(2+i)]]
+                            if time_step not in perception_obstacles_dict:
+                                perception_obstacles_dict[time_step] = [(i_x, i_y, i_z)]
+                            else:
+                                perception_obstacles_dict[time_step].append((i_x, i_y, i_z))
+
+
+                except Exception:
+                    pass
+
+
+
+                try:
+                    data_str_front_camera = socket_front_camera.recv(flags=zmq.NOBLOCK)
+                    timestamp_sec, sequence_num, front_image = data_str_front_camera.split(b':data_delimiter:')
+
+                    # record image after warm-up stage
+                    if int(sequence_num) > 150 and int(sequence_num) % record_every_n_step == 0:
+                        img_path = os.path.join(main_camera_folder, sequence_num.decode()+'_'+timestamp_sec.decode()+'.jpg')
+                        with open(img_path, 'wb') as f_out_front_camera:
+                            f_out_front_camera.write(front_image)
+                except Exception:
+                    pass
 
 
 

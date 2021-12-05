@@ -212,8 +212,8 @@ def parse_fuzzing_arguments():
     parser.add_argument("--outer_iterations", type=int, default=3)
     parser.add_argument('--objective_weights', nargs='+', type=float, default=default_objective_weights)
     parser.add_argument('--default_objectives', nargs='+', type=float, default=default_objectives)
-    parser.add_argument("--standardize_objective", type=int, default=1)
-    parser.add_argument("--normalize_objective", type=int, default=1)
+    parser.add_argument("--standardize_objective", type=int, default=0)
+    parser.add_argument("--normalize_objective", type=int, default=0)
     parser.add_argument('--traj_dist_metric', type=str, default='nearest')
 
 
@@ -558,7 +558,10 @@ def get_F(current_objectives, all_objectives, objective_weights, use_single_obje
     else:
         current_objectives_norm = current_objectives_std
 
-    print('current_objectives, current_objectives_std, current_objectives_norm', current_objectives, current_objectives_std, current_objectives_norm)
+    print('current_objectives')
+    print(current_objectives)
+    print('current_objectives_norm')
+    print(current_objectives_norm)
 
     current_Fs = current_objectives_norm * objective_weights
 

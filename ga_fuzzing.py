@@ -711,6 +711,8 @@ class NSGA2_CUSTOMIZED(NSGA2):
         self.restart_best_y = [None, 10000]
         self.local_best_y = [None, 10000]
 
+        self.pop_before_local = None
+
         self.local_gen = -1
         self.restart_gen = 0
         self.cur_gen = -1
@@ -718,11 +720,14 @@ class NSGA2_CUSTOMIZED(NSGA2):
         self.local_mating = local_mating
         self.mutation = kwargs['mutation']
 
+        self.minLisGen = 2
+
 
 
 
     def set_off(self):
         self.tmp_off = []
+
         if self.algorithm_name == 'avfuzzer':
             cur_best_y = [None, 10000]
             if self.cur_gen >= 0:
@@ -741,12 +746,24 @@ class NSGA2_CUSTOMIZED(NSGA2):
                             self.global_best_y = self.local_best_y
                         if self.local_best_y[1] < self.best_y_gen[-1][1]:
                             self.best_y_gen[-1] = self.local_best_y
-                        if self.local_best_y[1] < self.restart_best_y[1]:
-                            self.restart_best_y = self.local_best_y
+                        # if self.local_best_y[1] < self.restart_best_y[1]:
+                        #     self.restart_best_y = self.local_best_y
+
+                        tmp_best_ind = 0
+                        tmp_best_y = [None, 10000]
+                        for i, p in enumerate(self.pop_before_local):
+                            if p.F < tmp_best_y[1]:
+                                tmp_best_y = [p, p.F]
+                                tmp_best_ind = i
+
+                        self.pop_before_local[tmp_best_ind] = self.local_best_y[0]
+                        self.tmp_off, _ = self.mating.do(self.problem, self.pop_before_local, self.n_offsprings, algorithm=self)
+
+                        self.cur_gen += 1
                     else:
                         self.local_gen += 1
 
-                    self.tmp_off, _ = self.local_mating.do(self.problem, self.pop, self.n_offsprings, algorithm=self)
+                        self.tmp_off, _ = self.local_mating.do(self.problem, self.pop, self.n_offsprings, algorithm=self)
 
                 # global search
                 else:
@@ -762,8 +779,9 @@ class NSGA2_CUSTOMIZED(NSGA2):
                         if cur_best_y[1] < self.best_y_gen[-1][1]:
                             self.best_y_gen[-1] = cur_best_y
 
-                    if self.restart_gen == self.cur_gen:
-                        self.restart_best_y = cur_best_y
+                    if self.cur_gen - self.restart_gen <= self.minLisGen:
+                        if cur_best_y[1] < self.restart_best_y[1]:
+                            self.restart_best_y = cur_best_y
 
                     normal = True
                     # restart
@@ -787,11 +805,11 @@ class NSGA2_CUSTOMIZED(NSGA2):
                     # enter local
                     with open('tmp_log.txt', 'a') as f_out:
                         f_out.write('cur_best_y[1]'+str(cur_best_y[1])+', '+'self.restart_best_y[1]'+str(self.restart_best_y[1])+'\n')
-                    if normal and self.cur_gen - self.restart_gen > 2 and cur_best_y[1] < self.restart_best_y[1]:
+                    if normal and self.cur_gen - self.restart_gen > self.minLisGen and cur_best_y[1] < self.restart_best_y[1]:
                             with open('tmp_log.txt', 'a') as f_out:
                                 f_out.write(str(self.cur_gen)+'enter local'+'\n')
                             self.restart_best_y[1] = cur_best_y[1]
-
+                            self.pop_before_local = copy.deepcopy(self.pop)
                             pop = Population(self.pop_size, individual=Individual())
                             pop.set("X", [self.global_best_y[0].X for _ in range(self.pop_size)])
                             pop.set("F", [self.global_best_y[1] for _ in range(self.pop_size)])
@@ -810,7 +828,6 @@ class NSGA2_CUSTOMIZED(NSGA2):
                 # initialization
                 self.tmp_off = self.plain_initialization.do(self.problem, self.n_offsprings, algorithm=self)
                 self.cur_gen += 1
-
 
 
         elif self.algorithm_name == 'random':
