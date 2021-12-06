@@ -944,8 +944,16 @@ def draw_unique_bug_num_over_simulations(path_list, warmup_pth_list, warmup_pth_
             num_of_unique_bugs = []
             num_of_all_bugs = []
             # print('prev_X.shape, cur_X.shape', prev_X.shape, cur_X.shape)
+            best_num = 0
             for cutoff in cutoffs:
                 num, all_bug_num = count_unique_bug_num(prev_X, cur_X, prev_objectives, cur_objectives, cutoff, label, bug_type, xl, xu, mask, p, c, th)
+
+                # adjust for suboptimal unique bugs selection when couting
+                if num > best_num:
+                    best_num = num
+                elif num < best_num:
+                    num = best_num
+
                 num_of_unique_bugs.append(num)
                 num_of_all_bugs.append(all_bug_num)
 
