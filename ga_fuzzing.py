@@ -783,10 +783,15 @@ class NSGA2_CUSTOMIZED(NSGA2):
                         if cur_best_y[1] < self.restart_best_y[1]:
                             self.restart_best_y = cur_best_y
 
+
+                    with open('tmp_log.txt', 'a') as f_out:
+                        f_out.write('self.global_best_y: '+ str(self.global_best_y[1])+', cur_best_y[1]: '+str(cur_best_y[1])+', self.restart_best_y[1]: '+str(self.restart_best_y[1])+'\n')
+
                     normal = True
                     # restart
                     if self.cur_gen - self.restart_gen > 4:
                         last_5_mean = np.mean([v for _, v in self.best_y_gen[-5:]])
+
                         with open('tmp_log.txt', 'a') as f_out:
                             f_out.write('last_5_mean: '+str(last_5_mean)+', cur_best_y[1]: '+str(cur_best_y[1])+'\n')
                         if cur_best_y[1] >= last_5_mean:
@@ -802,9 +807,8 @@ class NSGA2_CUSTOMIZED(NSGA2):
                             self.cur_gen += 1
                             self.restart_gen = self.cur_gen
 
+
                     # enter local
-                    with open('tmp_log.txt', 'a') as f_out:
-                        f_out.write('cur_best_y[1]'+str(cur_best_y[1])+', '+'self.restart_best_y[1]'+str(self.restart_best_y[1])+'\n')
                     if normal and self.cur_gen - self.restart_gen > self.minLisGen and cur_best_y[1] < self.restart_best_y[1]:
                             with open('tmp_log.txt', 'a') as f_out:
                                 f_out.write(str(self.cur_gen)+'enter local'+'\n')

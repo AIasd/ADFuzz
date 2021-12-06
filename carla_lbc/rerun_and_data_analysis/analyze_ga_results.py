@@ -21,11 +21,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import NullFormatter
 from sklearn.manifold import TSNE
-from customized_utils import  check_bug, filter_critical_regions, get_sorted_subfolders, load_data, get_picklename, is_distinct_vectorized
-from ga_fuzzing import default_objectives
+from customized_utils import filter_critical_regions, get_sorted_subfolders, load_data, get_picklename, is_distinct_vectorized
 from matplotlib.lines import Line2D
 
-from carla_specific_utils.carla_specific import get_event_location_and_object_type
+# from carla_specific_utils.carla_specific import get_event_location_and_object_type
+
+
+from svl_script.svl_specific import check_bug
+default_objectives = np.array([0., 20., 1., 7., 7., 0., 0., 0., 0., 0.])
+
 
 def draw_hv(bug_res_path, save_folder):
     with open(bug_res_path, 'rb') as f_in:
@@ -858,7 +862,7 @@ def count_unique_bug_num(prev_X, cur_X, prev_objectives, cur_objectives, cutoff,
     return bug_num, all_bug_num
 
 
-def draw_unique_bug_num_over_simulations(path_list, warmup_pth_list, warmup_pth_cutoff, save_filename='num_of_unique_bugs', scene_name='', legend=True, range_upper_bound=6, bug_type='collision', unique_coeffs=[[]], plot_prev_X=False):
+def draw_unique_bug_num_over_simulations(path_list, warmup_pth_list, warmup_pth_cutoff, save_filename='num_of_unique_bugs', scene_name='', legend=True, range_upper_bound=6, bug_type='collision', unique_coeffs=[[]], plot_prev_X=False, step=50):
 
     fig = plt.figure()
     axes = fig.add_subplot(1,1,1)
@@ -866,7 +870,7 @@ def draw_unique_bug_num_over_simulations(path_list, warmup_pth_list, warmup_pth_
 
     p = 0
 
-    cutoffs = [50*i for i in range(0, range_upper_bound)]
+    cutoffs = [step*i for i in range(0, range_upper_bound)]
 
     for i, (label, pth_list) in enumerate(path_list):
         if len(unique_coeffs) == 0:
@@ -978,13 +982,13 @@ def draw_unique_bug_num_over_simulations(path_list, warmup_pth_list, warmup_pth_
 
 
 
-def draw_simulation_wrapper(town_path_list, warmup_pth, bug_type, town, range_upper_bound, unique_coeffs, warmup_pth_cutoff=500, plot_prev_X=False):
+def draw_simulation_wrapper(town_path_list, warmup_pth, bug_type, town, range_upper_bound, unique_coeffs, warmup_pth_cutoff=500, plot_prev_X=False, step=50):
     # 'collision', 'out-of-road'
     save_filename = 'num_of_unique_bugs_'+town+'_'+bug_type+'.pdf'
     scene_name = town + ' ' + bug_type
     print('-'*20, scene_name, '-'*20)
 
-    draw_unique_bug_num_over_simulations(town_path_list, warmup_pth, warmup_pth_cutoff, save_filename=save_filename, scene_name=scene_name, legend=True, range_upper_bound=range_upper_bound, bug_type=bug_type, unique_coeffs=unique_coeffs, plot_prev_X=plot_prev_X)
+    draw_unique_bug_num_over_simulations(town_path_list, warmup_pth, warmup_pth_cutoff, save_filename=save_filename, scene_name=scene_name, legend=True, range_upper_bound=range_upper_bound, bug_type=bug_type, unique_coeffs=unique_coeffs, plot_prev_X=plot_prev_X, step=step)
 
 
 def draw_accident_location(town_list, plot_prev_X=True):
@@ -1078,7 +1082,7 @@ def count_bug(town_list):
 
         return unique_bugs_group
 
-        
+
     for label, town_path, warmup_pth, warmup_pth_cutoff in town_list:
         from customized_utils import get_event_location_and_object_type
 
@@ -1354,12 +1358,32 @@ if __name__ == '__main__':
     # range_upper_bounds = [15]
     # unique_coeffs_list = [[]]
 
-    town_path_lists = [town05_out_of_road_path_list]
-    warmup_pths = [[warmup_pth_town05_out_of_road]]
-    bug_types = ['out-of-road']
-    towns = ['town05']
-    range_upper_bounds = [15]
+    # town_path_lists = [town05_out_of_road_path_list]
+    # warmup_pths = [[warmup_pth_town05_out_of_road]]
+    # bug_types = ['out-of-road']
+    # towns = ['town05']
+    # range_upper_bounds = [15]
+    # unique_coeffs_list = [[]]
+
+
+
+
+    borresgas_path_list = [
+    ('av-fuzzer', ['svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_04_23_07_34,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0']),
+    ('ga-un-adv-nn', ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_13_29_54,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1']),
+    ('regression-un-nn', ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_15_48_26,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1']),
+    ]
+
+    borregas_warmup = 'svl_script/run_results_svl/seeds/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_09_22_50,10_24_none_240_coeff_0.0_0.1_0.5_only_unique_1'
+    town_path_lists = [borresgas_path_list]
+    warmup_pths = [[None, borregas_warmup, borregas_warmup]]
+    bug_types = ['collision']
+    towns = ['Borregas Ave']
+    range_upper_bounds = [24]
     unique_coeffs_list = [[]]
+
+
+
 
     # town_path_lists = [town03_out_of_road_path_list]
     # warmup_pths = [[warmup_pth_town03_out_of_road]]
@@ -1402,7 +1426,7 @@ if __name__ == '__main__':
         town = towns[i]
         range_upper_bound = range_upper_bounds[i]
         unique_coeffs = unique_coeffs_list[i]
-        draw_simulation_wrapper(town_path_list, warmup_pth, bug_type, town, range_upper_bound, unique_coeffs)
+        draw_simulation_wrapper(town_path_list, warmup_pth, bug_type, town, range_upper_bound, unique_coeffs, warmup_pth_cutoff=100, plot_prev_X=True, step=10)
 
 
 
@@ -1412,20 +1436,6 @@ if __name__ == '__main__':
     #     visualize_ped_over_time(path, save_filename='ped_over_time'+'_'+alg, bug_type='collision', unique_coeffs=[0.1, 0.1], range_upper_bound=5, warmup_path=warmup_path, warmup_len=warmup_len)
 
 
-    # town_07_front
-    # random: 8
-    # random_un: 6
-    # ga: 9
-    # ga_un: 12
-    # ga_un_nn: 12
-    # ga_un_adv_nn: 11
-
-    # town_05_left
-    # ga: 18
-    # ga_un: 20
-    # random: 19
-    # ga_un_adv_nn: 19
-    # ga_un_nn: 19
 
     town05_left_collision_list = [('nsga2', 'run_results/nsga2/town05_left_0/turn_left_town05/lbc/2021_03_30_19_06_09,50_20_none_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.1__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', None, None),
     ('nsga2-un', 'run_results/nsga2-un/town05_left_0/turn_left_town05/lbc/2021_03_30_10_54_55,50_25_none_1000_100_1.01_-4_0.9_coeff_0.0_0.2_0.2__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', None, None),
@@ -1444,7 +1454,11 @@ if __name__ == '__main__':
     # draw_simulation_wrapper(town_path_list, warmup_pth_list, bug_type='collision', town='town07', range_upper_bound=21, unique_coeffs=[], warmup_pth_cutoff=500, plot_prev_X=True)
 
 
-    # count_bug(town05_left_collision_list)
+
+
+
+
+    # count_bug(borregas_collision_list)
 
     # rerun/bugs/train/2021_04_04_15_00_30_non_train_lbc_agent_ped_no_debug/town05_left_0_Scenario12_lbc_augment_00
     # rerun/bugs/train/2021_04_04_14_59_45_vehicle_train_lbc_agent_ped_no_debug/town05_left_0_Scenario12_lbc_augment_00

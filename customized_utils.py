@@ -1103,10 +1103,15 @@ def choose_farthest_offs(tmp_off_candidates_X, all_pop_run_X, pop_size):
     # all_pop_run_X = (all_pop_run_X-mean)/std
 
     dis = tmp_off_candidates_X[:, np.newaxis,:] - all_pop_run_X
+    # print('\n'*5, 'choose_farthest_offs')
+    # print('tmp_off_candidates_X', tmp_off_candidates_X)
+    # print('all_pop_run_X', all_pop_run_X)
+    # print('dis', dis)
+    # print('\n'*5)
     dis_sum = np.mean(np.mean(np.abs(dis), axis=2), axis=1)
     chosen_inds = np.argsort(dis_sum)[-pop_size:]
-    with open('tmp_log.txt', 'a') as f_out:
-        f_out.write('shapes: '+str(np.shape(tmp_off_candidates_X[:, np.newaxis,:]))+','+str(np.shape(all_pop_run_X))+str(np.shape(dis))+str(np.shape(dis_sum))+str(dis_sum)+'\n\n'+str(dis_sum[chosen_inds])+'\n')
+    # with open('tmp_log.txt', 'a') as f_out:
+    #     f_out.write('shapes: '+str(np.shape(tmp_off_candidates_X[:, np.newaxis,:]))+','+str(np.shape(all_pop_run_X))+str(np.shape(dis))+str(np.shape(dis_sum))+str(dis_sum)+'\n\n'+str(dis_sum[chosen_inds])+'\n')
     return chosen_inds
 # ---------------- AVFuzzer -------------------
 
