@@ -1,7 +1,7 @@
 # ADFuzz
 
 ## Introduction
-A open-source software package for fuzzing autonomous driving systems in high-fidelity simulators. We are currently working on supporting more stacks and fuzzing algorithms. Please contact us if you are interested in contributing.
+An open-source software package for fuzzing autonomous driving systems in high-fidelity simulators. We are currently working on supporting more stacks and fuzzing algorithms. Please contact us if you are interested in contributing.
 
 ## Current support of stack
 - Apollo(master) + SVL 2021.3
@@ -61,7 +61,7 @@ Need to prepare data in csv format (A small dataset will be provided as an examp
 python ga_fuzzing.py --simulator no_simulation --n_gen 10 --pop_size 20 --algorithm_name nsga2-un --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --n_offsprings 50
 
 # AVFuzzer
-python ga_fuzzing.py --simulator no_simulation --n_gen 100 --pop_size 4 --algorithm_name avfuzzer --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --only_run_unique_cases 0
+python ga_fuzzing.py --simulator no_simulation --n_gen 50 --pop_size 4 --algorithm_name avfuzzer --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --only_run_unique_cases 0
 
 
 ```
@@ -81,7 +81,7 @@ Following the installation procedure at [https://github.com/lgsvl/PythonAPI](htt
 ```
 git clone https://github.com/AIasd/apollo_channel_extraction.git
 ```
-and put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/`. Note that this step is preferred to be done before building apollo `./apollo.sh build_opt_gpu` to avoid extra building step.
+and put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/` and put `generate_route.sh` inside `apollo`. Note that this step is preferred to be done before building apollo `./apollo.sh build_opt_gpu` to avoid extra building step.
 
 
 #### Create Apollo Master in Vehicles
@@ -119,16 +119,16 @@ and finally run the channel_extraction
 Finally, in a third terminal:
 If using apollo with ground-truth traffic signal:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name random --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 50
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 50
 ```
 Or if using apollo with ground-truth perception:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2 --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_modular --route_type 'BorregasAve_left' --scenario_type 'one_ped_crossing' --record_every_n_step 5 --n_offsprings 100
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_modular --route_type 'BorregasAve_left' --scenario_type 'one_ped_crossing' --record_every_n_step 5 --n_offsprings 100
 ```
 
 Or if running AVFuzzer
 ```
-python ga_fuzzing.py --simulator svl --n_gen 50 --pop_size 4 --algorithm_name avfuzzer --has_run_num 100 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --only_run_unique_cases 0
+python ga_fuzzing.py --simulator svl --n_gen 50 --pop_size 4 --algorithm_name avfuzzer --has_run_num 100 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --only_run_unique_cases 0 --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5
 ```
 
 
@@ -136,6 +136,17 @@ python ga_fuzzing.py --simulator svl --n_gen 50 --pop_size 4 --algorithm_name av
 ```
 python svl_script/rerun_svl.py
 ```
+
+#### Add new map
+Inside docker,
+```
+sudo bash scripts/generate_map.sh YOUR_MAP_FOLDER_NAME
+```
+restart Dreamview to refresh the map list
+```
+bootstrap.sh stop && bootstrap.sh
+```
+
 
 
 #### Auxiliary
@@ -175,10 +186,10 @@ Go to the "files" tab, and download the model weights, named "epoch=24.ckpt". Mo
 
 #### Run Fuzzing
 ```
-# NSGA2-UN
+# GA-UN
 python ga_fuzzing.py -p 2015 -s 8791 -d 8792 --n_gen 2 --pop_size 2 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5
 
-# NSGA2-UN-ADV-NN
+# GA-UN-ADV-NN
 python ga_fuzzing.py -p 2021 -s 8795 -d 8796 --n_gen 15 --pop_size 50 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --rank_mode adv_nn --warm_up_path <path-to-warm-up-run-folder> --warm_up_len 500 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 1
 
 # AVFuzzer
