@@ -44,7 +44,7 @@ time_fields = [
 ]
 
 # number of waypoints to perturb
-waypoints_num_limit = 2
+waypoints_num_limit = 1
 
 waypoint_fields = [
     ("idle", "real", 0, 20),

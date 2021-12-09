@@ -3,16 +3,49 @@
 ## Introduction
 An open-source software package for fuzzing autonomous driving systems in high-fidelity simulators. We are currently working on supporting more stacks and fuzzing algorithms. Please contact us if you are interested in contributing.
 
-## Current support of stack
-- Apollo(master) + SVL 2021.3
+### Current support of stacks
+- Apollo(6.0/master) + SVL 2021.3
 - LBC + CARLA 0.9.9
 - No Simulation
 
-## Current support of algorithms (TBD)
+### Current support of algorithms
+- NSGA2-SM
+- NSGA2-DT
+- AV-Fuzzer
+- AutoFuzz (GA-UN-NN-GRAD)
+
+## Found Traffic Violation Demos
+### pid-1 controller collides with a pedestrian:
+
+<img src="gif_demos/autopilot_pid1_35_rgb_with_car.gif" width="40%" height="40%"/>
+
+### pid-2 controller collides with the stopped leading car:
+
+<img src="gif_demos/pid_pid2_39_rgb_with_car.gif" width="40%" height="40%"/>
+
+### lbc controller is going wrong lane:
+
+<img src="gif_demos/lbc_58_rgb_with_car.gif" width="40%" height="40%"/>
+
+### Apollo6.0 collides with a school bus:
+<img src="gif_demos/apollo_schoolbus_collision.gif" width="20%" height="20%"/>
+
+
+## Uniqueness Definition for Traffic Violation Demos
+### A Found Traffic Violation
+<img src="gif_demos/lbc_left_ped_8.gif" width="40%" height="40%"/>
+
+### A Highly Similar One
+<img src="gif_demos/lbc_left_ped_971.gif" width="40%" height="40%"/>
+
+### A Distinct One
+<img src="gif_demos/lbc_left_vehicle_982.gif" width="40%" height="40%"/>
 
 
 
-## Install pyenv and python3.8
+
+## Preparation
+### Install pyenv and python3.8
 
 install pyenv
 ```
@@ -34,7 +67,7 @@ PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 eval "$(pyenv init -)"
 ```
 
-## Environment Setup
+### Environment Setup
 In `~/Docuements/self-driving-cars`,
 ```
 git clone https://github.com/AIasd/ADFuzz.git
@@ -52,10 +85,10 @@ Install pytroch-lightening
 pip3 install pytorch-lightning==0.8.5
 ```
 
-### No Simulation
-#### Setup
+## STACK: No Simulation
+### Setup
 Need to prepare data in csv format (A small dataset will be provided as an example).
-#### Run Fuzzing
+### Run Fuzzing
 ```
 # GA-UN
 python ga_fuzzing.py --simulator no_simulation --n_gen 10 --pop_size 20 --algorithm_name nsga2-un --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --n_offsprings 50
@@ -66,8 +99,8 @@ python ga_fuzzing.py --simulator no_simulation --n_gen 50 --pop_size 4 --algorit
 
 ```
 
-### SVL2021.3+Apollo Master
-#### Setup
+## STACK: SVL2021.3+Apollo Master
+### Setup
 Install SVL2021.3 and Apollo Master following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
 
 
@@ -88,12 +121,10 @@ and put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/`
 SVL does not have a default "Apollo Master" for "Lincoln2017MKZ" under "Vehicles". To create one, one can duplicate "Apollo 5.0" and then add sensors "Clock Sensor" and "Signal Sensor" from "Apollo 6.0 (modular testing)".
 
 
-
-
-### Other preparation
+#### Other preparation
 Need to change the field `model_id` in svl_specific to one's own model_id on svl web UI.
 
-#### Run Fuzzing
+### Run Fuzzing
 Start Apollo and SVL API only respectively following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
 
 
@@ -131,13 +162,12 @@ Or if running AVFuzzer
 python ga_fuzzing.py --simulator svl --n_gen 50 --pop_size 4 --algorithm_name avfuzzer --has_run_num 100 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --only_run_unique_cases 0 --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5
 ```
 
-
-#### Rerun
+### Rerun
 ```
 python svl_script/rerun_svl.py
 ```
 
-#### Add new map
+### Add a new map
 Inside docker,
 ```
 sudo bash scripts/generate_map.sh YOUR_MAP_FOLDER_NAME
@@ -147,16 +177,15 @@ restart Dreamview to refresh the map list
 bootstrap.sh stop && bootstrap.sh
 ```
 
-
-
-#### Auxiliary
+### Additional Tools
 [Cyber Recorder](https://github.com/ApolloAuto/apollo/blob/master/docs/cyber/CyberRT_Developer_Tools.md)
 
 
 
 
 
-### CARLA0.9.9+LBC
+## STACK: CARLA0.9.9+LBC
+### Setup
 #### Installation of Carla 0.9.9.4
 This code uses CARLA 0.9.9.4. You will need to first install CARLA 0.9.9.4, along with the additional maps.
 See [link](https://github.com/carla-simulator/carla/releases/tag/0.9.9) for more instructions.
@@ -184,7 +213,7 @@ LBC model is one of the models supported to be tested. A pretrained-model's chec
 Go to the "files" tab, and download the model weights, named "epoch=24.ckpt". Move this model's checkpoint to the `models` folder (May need to create `models` folder under this repo's folder).
 
 
-#### Run Fuzzing
+### Run Fuzzing
 ```
 # GA-UN
 python ga_fuzzing.py -p 2015 -s 8791 -d 8792 --n_gen 2 --pop_size 2 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5

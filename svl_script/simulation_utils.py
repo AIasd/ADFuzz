@@ -377,6 +377,11 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
 
     ego, dv = initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, BRIDGE_PORT, events_path)
 
+    # extra destination request to avoid previous request lost?
+    dv.set_destination(destination.position.x, destination.position.z)
+
+    # time.sleep(2)
+
     middle_point = lgsvl.Transform(position=(destination.position + start.position) * 0.5, rotation=start.rotation)
 
     for k, v in customized_data['customized_center_transforms'].items():
@@ -513,8 +518,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
             control_policy = "trigger=500;green=20;yellow=2;red=5;loop"
             signal.control(control_policy)
 
-    # extra destination request to avoid previous request lost?
-    dv.set_destination(destination.position.x, destination.position.z)
+
 
     return sim, ego, destination
 
