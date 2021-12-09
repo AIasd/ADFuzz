@@ -1558,7 +1558,7 @@ if __name__ == "__main__":
 
     parent_folder = 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2500_0_0.2_0.5/2021_02_07_22_48_24,50_60_adv_nn_3000_100_1.01_-4_0.9_coeff_0_0.2_0.5__one_output_use_alternate_nn_1_nn_rep'
 
-    parent_folder2 = '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2021_02_03_10_27_28,50_14_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5_Random_none_BNN'
+    parent_folder2 = 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2021_02_03_10_27_28,50_14_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5_Random_none_BNN'
 
     parent_folders = ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2500_0_0.2_0.5/2021_02_07_21_23_16,50_60_none_3000_100_1.01_-4_0.9_coeff_0_0.2_0.5__one_output_use_alternate_nn_0_none', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2500_0_0.2_0.5/2021_02_07_22_39_05,50_60_nn_3000_100_1.01_-4_0.9_coeff_0_0.2_0.5__one_output_use_alternate_nn_0_none', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2500_0_0.2_0.5/2021_02_07_22_43_07,50_60_adv_nn_3000_100_1.01_-4_0.9_coeff_0_0.2_0.5__one_output_use_alternate_nn_0_none', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2500_0_0.2_0.5/2021_02_07_22_48_24,50_60_adv_nn_3000_100_1.01_-4_0.9_coeff_0_0.2_0.5__one_output_use_alternate_nn_1_nn_rep']
 
@@ -1637,29 +1637,6 @@ if __name__ == "__main__":
 
 
 
-
-
-
-    # tsne town07 alternate_nn
-    # '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2021_02_04_18_18_39,50_14_alternate_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5__one_output'
-    # '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/2021_02_03_10_27_28,50_14_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5_Random_none_BNN'
-
-    # tsne town01 alternate_nn
-    # '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/2021_02_04_18_18_52,50_14_alternate_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5__one_output'
-    # '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/2021_02_01_23_16_09,50_14_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5_Random_none'
-
-
-
-    # tsne town05 BADGE
-    # '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/2021_02_01_00_45_18,50_14_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5_Random_none'
-    # '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/2021_02_02_23_43_12,50_14_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5_BADGE_none_one_output'
-
-    # tsne town01 BADGE
-    # '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/2021_02_01_23_16_09,50_14_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5_Random_none'
-    # '/home/zhongzzy9/Documents/self-driving-car/2020_CARLA_challenge/run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/2021_02_02_23_43_22,50_14_nn_700_300_1.01_-4_0.75_coeff_0.0_0.1_0.5_BADGE_none_one_output'
-
-
-    # tsne town01 random
 
 
 

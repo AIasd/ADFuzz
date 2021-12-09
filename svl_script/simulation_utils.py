@@ -159,7 +159,7 @@ def save_camera(ego, main_camera_folder, counter, i):
     import os
     for sensor in ego.get_sensors():
         if sensor.name == "Main Camera":
-            rel_path = '/home/zhongzzy9/Documents/self-driving-cars/2020_CARLA_challenge/run_results_svl'+'/'+"main_camera_"+str(counter)+'_'+str(i)+".png"
+            rel_path = 'run_results_svl'+'/'+"main_camera_"+str(counter)+'_'+str(i)+".png"
             try:
                 sensor.save(rel_path, compression=9)
             except:
