@@ -402,35 +402,39 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
             middle_point_i = customized_data[center_key_i]
         else:
             middle_point_i = middle_point
+        rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
 
-        # make it counter-clockwise
-        rot_angle = 360 - middle_point_i.rotation.y
-        rot_rad = np.deg2rad(rot_angle)
-        # convert from ego car coordinate to map coordinate
         ped_x, ped_y = rotate(ped.x, ped.y, rot_rad)
+
         ped_position_offset = lgsvl.Vector(ped_x, 0, ped_y)
         ped_rotation_offset = lgsvl.Vector(0, 0, 0)
 
         ped_point = lgsvl.Transform(position=middle_point_i.position+ped_position_offset, rotation=middle_point_i.rotation+ped_rotation_offset)
 
-        forward = lgsvl.utils.transform_to_forward(ped_point)
-
         wps = [lgsvl.WalkWaypoint(position=ped_point.position, idle=ped.waypoints[0].idle, trigger_distance=ped.waypoints[0].trigger_distance, speed=ped.speed)]
 
-        # to avoid pedestrian going off ground
-        middle_point_i.position.y -= 0.1
 
         for j, wp in enumerate(ped.waypoints):
+            center_key_i_j = "pedestrian_"+str(i)+"_center_transform_"+str(j)
+            if center_key_i_j in customized_data:
+                middle_point_i = customized_data[center_key_i_j]
+                rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
+
+
             j_next = np.min([j+1, len(ped.waypoints)-1])
             wp_next = ped.waypoints[j_next]
 
             wp_x, wp_y = rotate(wp.x, wp.y, rot_rad)
+
             loc = middle_point_i.position+lgsvl.Vector(wp_x, 0, wp_y)
+
+            # to avoid pedestrian going off ground
+            loc.y -= 0.1
+
             wps.append(lgsvl.WalkWaypoint(position=loc, idle=wp_next.idle, trigger_distance=wp_next.trigger_distance, speed=ped.speed))
 
         state = lgsvl.AgentState()
         state.transform = ped_point
-        # state.velocity = ped.speed * forward
         print('\n'*3, 'ped.model', ped.model, '\n'*3)
         p = sim.add_agent(pedestrian_types[ped.model], lgsvl.AgentType.PEDESTRIAN, state)
         p.follow(wps, False)
@@ -442,36 +446,32 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
             middle_point_i = customized_data[center_key_i]
         else:
             middle_point_i = middle_point
+        rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
 
-
-
-
-        # make it counter-clockwise
-        rot_angle = 360 - middle_point_i.rotation.y
-        rot_rad = np.deg2rad(rot_angle)
-        # convert from ego car coordinate to map coordinate
         vehicle_x, vehicle_y = rotate(vehicle.x, vehicle.x, rot_rad)
         vehicle_position_offset = lgsvl.Vector(vehicle_x, 0, vehicle_y)
         vehicle_rotation_offset = lgsvl.Vector(0, 0, 0)
 
         vehicle_point = lgsvl.Transform(position=middle_point_i.position+vehicle_position_offset, rotation=middle_point_i.rotation+vehicle_rotation_offset)
 
-        forward = lgsvl.utils.transform_to_forward(vehicle_point)
-
-        wp_rotation = middle_point_i.rotation
-
         wps = [lgsvl.DriveWaypoint(position=vehicle_point.position, speed=vehicle.speed, acceleration=0, angle=vehicle_point.rotation, idle=vehicle.waypoints[0].idle, deactivate=False, trigger_distance=vehicle.waypoints[0].trigger_distance)]
 
-        # to avoid vehicle going underground
-        middle_point_i.position.y += 0.3
-
         for j, wp in enumerate(vehicle.waypoints):
+            center_key_i_j = "vehicle_"+str(i)+"_center_transform_"+str(j)
+            if center_key_i_j in customized_data:
+                middle_point_i = customized_data[center_key_i_j]
+                rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
+
             j_next = np.min([j+1, len(vehicle.waypoints)-1])
             wp_next = vehicle.waypoints[j_next]
 
             wp_x, wp_y = rotate(wp.x, wp.y, rot_rad)
             pos = middle_point_i.position + lgsvl.Vector(wp_x, 0, wp_y)
-            wps.append(lgsvl.DriveWaypoint(position=pos, speed=vehicle.speed, acceleration=0, angle=wp_rotation, idle=wp_next.idle, deactivate=False, trigger_distance=wp_next.trigger_distance))
+
+            # to avoid vehicle going underground
+            pos.y += 0.3
+
+            wps.append(lgsvl.DriveWaypoint(position=pos, speed=vehicle.speed, acceleration=0, angle=middle_point_i.rotation, idle=wp_next.idle, deactivate=False, trigger_distance=wp_next.trigger_distance))
 
         state = lgsvl.AgentState()
         state.transform = vehicle_point
