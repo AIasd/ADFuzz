@@ -884,21 +884,23 @@ def draw_unique_bug_num_over_simulations(path_list, warmup_pth_list, warmup_pth_
         else:
             warmup_pth = warmup_pth_list[i]
 
-        if warmup_pth:
-            subfolders = get_sorted_subfolders(warmup_pth)
-            prev_X, _, prev_objectives, _, _, _ = load_data(subfolders)
-            prev_X = np.array(prev_X)[:warmup_pth_cutoff]
-            prev_objectives = prev_objectives[:warmup_pth_cutoff]
-        else:
-            prev_X = []
-            prev_objectives = []
 
-
-        print('-'*30, label, '-'*30)
         num_of_unique_bugs_list = []
         num_of_all_bugs_list = []
 
         for pth in pth_list:
+            if warmup_pth:
+                subfolders = get_sorted_subfolders(warmup_pth)
+                prev_X, _, prev_objectives, _, _, _ = load_data(subfolders)
+                prev_X = np.array(prev_X)[:warmup_pth_cutoff]
+                prev_objectives = prev_objectives[:warmup_pth_cutoff]
+            else:
+                prev_X = []
+                prev_objectives = []
+
+            print('\n'*3, 'prev_X', len(prev_X), '\n'*3)
+            print('-'*30, label, '-'*30)
+
             pickle_filename = get_picklename(pth)
             with open(pickle_filename, 'rb') as f_in:
                 d = pickle.load(f_in)
@@ -1377,14 +1379,28 @@ if __name__ == '__main__':
 
 
     borresgas_path_list = [
-    ('av-fuzzer', ['svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_04_23_07_34,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0']),
-    ('ga-un-adv-nn', ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_13_29_54,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1']),
-    ('regression-un-nn', ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_15_48_26,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1']),
+    ('ga-un-nn-grad',
+    ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_13_29_54,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_17_44_01,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_19_28_27,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_18_06_10,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_20_20_06,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_08_09_27_08,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1'
+    ]),
+    ('nsga2-sm-un-a',
+    ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_15_48_26,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_21_18_15,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_13_19_37,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_15_31_36,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_22_38_30,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_08_00_35_23,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1'
+    ]),
+    ('av-fuzzer',
+    ['svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_04_23_07_34,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0', 'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_21_09_58,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
+    'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_09_36_45,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
+    'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_13_52_55,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
+    'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_23_42_55,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
+    'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_09_29_17,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0']),
     ]
 
     borregas_warmup = 'svl_script/run_results_svl/seeds/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_09_22_50,10_24_none_240_coeff_0.0_0.1_0.5_only_unique_1'
     town_path_lists = [borresgas_path_list]
-    warmup_pths = [[None, borregas_warmup, borregas_warmup]]
+    warmup_pths = [[borregas_warmup, borregas_warmup, None]]
     bug_types = ['collision']
     towns = ['Borregas Ave']
     range_upper_bounds = [24]

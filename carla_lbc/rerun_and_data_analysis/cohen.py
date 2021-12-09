@@ -72,9 +72,12 @@ if __name__ == '__main__':
     # town07 7.08
     x7 = [409,390,386,368,424,391]
     y7 = [286,281,284,293,292,263]
+    # borregas
+    xb = [68, 79, 65, 74, 86, 85]
+    yb = [49, 44, 51, 47, 65, 48]
 
-    x = x3
-    y = y3
+    x = xb
+    y = yb
     print(x, y)
     print ("cohen d = ", cohen_d(x, y))
     print('Wilcoxon rank-sum statistics p value', ranksums(x, y))

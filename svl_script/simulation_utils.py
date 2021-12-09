@@ -396,6 +396,29 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
 
         static_object = sim.controllable_add(static_types[static.model], state)
 
+    # for i, vehicle in enumerate(customized_data['static_vehicles_list']):
+    #     center_key_i = "static_vehicle_center_transform_"+str(i)
+    #     if center_key_i in customized_data:
+    #         middle_point_i = customized_data[center_key_i]
+    #     else:
+    #         middle_point_i = middle_point
+    #     rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
+    #
+    #     vehicle_x, vehicle_y = rotate(vehicle.x, vehicle.y, rot_rad)
+    #     vehicle_position_offset = lgsvl.Vector(vehicle_x, 0, vehicle_y)
+    #     vehicle_rotation_offset = lgsvl.Vector(0, 0, 0)
+    #
+    #     vehicle_point = lgsvl.Transform(position=middle_point_i.position+vehicle_position_offset, rotation=middle_point_i.rotation+vehicle_rotation_offset)
+    #
+    #
+    #
+    #     state = lgsvl.AgentState()
+    #     state.transform = vehicle_point
+    #     p = sim.add_agent(vehicle_types[vehicle.model], lgsvl.AgentType.NPC, state)
+
+
+
+
     for i, ped in enumerate(customized_data['pedestrians_list']):
         center_key_i = "pedestrian_center_transform_"+str(i)
         if center_key_i in customized_data:
@@ -417,6 +440,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         for j, wp in enumerate(ped.waypoints):
             center_key_i_j = "pedestrian_"+str(i)+"_center_transform_"+str(j)
             if center_key_i_j in customized_data:
+                print(center_key_i_j)
                 middle_point_i = customized_data[center_key_i_j]
                 rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
 
@@ -429,7 +453,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
             loc = middle_point_i.position+lgsvl.Vector(wp_x, 0, wp_y)
 
             # to avoid pedestrian going off ground
-            loc.y -= 0.1
+            # loc.y -= 0.1
 
             wps.append(lgsvl.WalkWaypoint(position=loc, idle=wp_next.idle, trigger_distance=wp_next.trigger_distance, speed=ped.speed))
 
@@ -440,7 +464,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         p.follow(wps, False)
         other_agents.append(p)
 
-    for vehicle in customized_data['vehicles_list']:
+    for i, vehicle in enumerate(customized_data['vehicles_list']):
         center_key_i = "vehicle_center_transform_"+str(i)
         if center_key_i in customized_data:
             middle_point_i = customized_data[center_key_i]
@@ -448,7 +472,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
             middle_point_i = middle_point
         rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
 
-        vehicle_x, vehicle_y = rotate(vehicle.x, vehicle.x, rot_rad)
+        vehicle_x, vehicle_y = rotate(vehicle.x, vehicle.y, rot_rad)
         vehicle_position_offset = lgsvl.Vector(vehicle_x, 0, vehicle_y)
         vehicle_rotation_offset = lgsvl.Vector(0, 0, 0)
 
@@ -459,6 +483,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         for j, wp in enumerate(vehicle.waypoints):
             center_key_i_j = "vehicle_"+str(i)+"_center_transform_"+str(j)
             if center_key_i_j in customized_data:
+                print(center_key_i_j)
                 middle_point_i = customized_data[center_key_i_j]
                 rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
 
@@ -469,7 +494,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
             pos = middle_point_i.position + lgsvl.Vector(wp_x, 0, wp_y)
 
             # to avoid vehicle going underground
-            pos.y += 0.3
+            # pos.y += 0.3
 
             wps.append(lgsvl.DriveWaypoint(position=pos, speed=vehicle.speed, acceleration=0, angle=middle_point_i.rotation, idle=wp_next.idle, deactivate=False, trigger_distance=wp_next.trigger_distance))
 
@@ -485,7 +510,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         signal = controllables[i]
         if signal.type == "signal":
             control_policy = signal.control_policy
-            control_policy = "trigger=500;green=10;yellow=2;red=5;loop"
+            control_policy = "trigger=500;green=20;yellow=2;red=5;loop"
             signal.control(control_policy)
 
     # extra destination request to avoid previous request lost?

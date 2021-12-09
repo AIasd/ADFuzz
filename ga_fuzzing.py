@@ -1547,10 +1547,10 @@ if __name__ == '__main__':
         if fuzzing_arguments.ego_car_model not in ['apollo_6_with_signal', 'apollo_6_modular', 'apollo_6_modular_2gt']:
             print('not supported fuzzing_arguments.ego_car_model for svl:', fuzzing_arguments.ego_car_model, 'set ot to apollo_6_modular')
             fuzzing_arguments.ego_car_model = 'apollo_6_modular'
-        if fuzzing_arguments.route_type not in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_right']:
+        if fuzzing_arguments.route_type not in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_straight']:
             print('not supported fuzzing_arguments.route_type for svl:', fuzzing_arguments.route_type)
             fuzzing_arguments.route_type = 'BorregasAve_forward'
-        if fuzzing_arguments.scenario_type not in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing']:
+        if fuzzing_arguments.scenario_type not in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing', 'go_across_junction_sf', 'go_across_junction_ba']:
             print('not supported fuzzing_arguments.scenario_type for svl:', fuzzing_arguments.scenario_type)
             fuzzing_arguments.scenario_type = 'default'
         fuzzing_arguments.ports = [8181]
