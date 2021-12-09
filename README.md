@@ -1,18 +1,19 @@
 # ADFuzz
 
 ## Introduction
-An open-source software package for fuzzing autonomous driving systems in high-fidelity simulators. We are currently working on supporting more stacks and fuzzing algorithms. Please contact us if you are interested in contributing.
+An open-source software package for fuzzing autonomous driving systems in high-fidelity simulators.
 
 ### Current support of stacks
-- Apollo(6.0/master) + SVL 2021.3
 - LBC + CARLA 0.9.9
+- Apollo(6.0/master) + SVL 2021.3
 - No Simulation
 
 ### Current support of algorithms
+- AutoFuzz (GA-UN-NN-GRAD)
 - NSGA2-SM
 - NSGA2-DT
 - AV-Fuzzer
-- AutoFuzz (GA-UN-NN-GRAD)
+
 
 ## Found Traffic Violation Demos
 ### pid-1 controller collides with a pedestrian:
@@ -28,7 +29,7 @@ An open-source software package for fuzzing autonomous driving systems in high-f
 <img src="gif_demos/lbc_58_rgb_with_car.gif" width="40%" height="40%"/>
 
 ### Apollo6.0 collides with a school bus:
-<img src="gif_demos/apollo_schoolbus_collision.gif" width="20%" height="20%"/>
+<img src="gif_demos/apollo_schoolbus_collision.gif" width="40%" height="40%"/>
 
 
 ## Uniqueness Definition for Traffic Violation Demos
@@ -85,21 +86,52 @@ Install pytroch-lightening
 pip3 install pytorch-lightning==0.8.5
 ```
 
-## STACK: No Simulation
+
+
+## STACK1: CARLA0.9.9+LBC
 ### Setup
-Need to prepare data in csv format (A small dataset will be provided as an example).
+#### Installation of Carla 0.9.9.4
+This code uses CARLA 0.9.9.4. You will need to first install CARLA 0.9.9.4, along with the additional maps.
+See [link](https://github.com/carla-simulator/carla/releases/tag/0.9.9) for more instructions.
+
+For convenience, the following commands can be used to install carla 0.9.9.4.
+
+Download CARLA_0.9.9.4.tar.gz and AdditionalMaps_0.9.9.4.tar.gz from [link](https://github.com/carla-simulator/carla/releases/tag/0.9.9), put it at the same level of this repo, and run
+```
+mkdir carla_0994_no_rss
+tar -xvzf CARLA_0.9.9.4.tar.gz -C carla_0994_no_rss
+```
+move `AdditionalMaps_0.9.9.4.tar.gz` to `carla_0994_no_rss/Import/` and in the folder `carla_0994_no_rss/` run:
+```
+./ImportAssets.sh
+```
+Then, run
+```
+cd carla_0994_no_rss/PythonAPI/carla/dist
+easy_install carla-0.9.9-py3.7-linux-x86_64.egg
+```
+
+#### Download a LBC pretrained model
+LBC model is one of the models supported to be tested. A pretrained-model's checkpoint can be found [here](https://app.wandb.ai/bradyz/2020_carla_challenge_lbc/runs/command_coefficient=0.01_sample_by=even_stage2/files)
+
+Go to the "files" tab, and download the model weights, named "epoch=24.ckpt". Move this model's checkpoint to the `models` folder (May need to create `models` folder under this repo's folder).
+
+
 ### Run Fuzzing
 ```
 # GA-UN
-python ga_fuzzing.py --simulator no_simulation --n_gen 10 --pop_size 20 --algorithm_name nsga2-un --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --n_offsprings 50
+python ga_fuzzing.py -p 2015 -s 8791 -d 8792 --n_gen 2 --pop_size 2 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5
+
+# GA-UN-NN-GRAD
+python ga_fuzzing.py -p 2021 -s 8795 -d 8796 --n_gen 15 --pop_size 50 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --rank_mode adv_nn --warm_up_path <path-to-warm-up-run-folder> --warm_up_len 500 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 1
 
 # AVFuzzer
-python ga_fuzzing.py --simulator no_simulation --n_gen 50 --pop_size 4 --algorithm_name avfuzzer --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --only_run_unique_cases 0
-
-
+python ga_fuzzing.py -p 2018 -s 8793 -d 8794 --n_gen 200 --pop_size 4 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 0 --n_offsprings 50
 ```
 
-## STACK: SVL2021.3+Apollo Master
+
+
+## STACK2: SVL2021.3+Apollo Master
 ### Setup
 Install SVL2021.3 and Apollo Master following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
 
@@ -148,11 +180,11 @@ and finally run the channel_extraction
 
 
 Finally, in a third terminal:
-If using apollo with ground-truth traffic signal:
+If running GA-UN and using apollo with ground-truth traffic signal:
 ```
 python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 50
 ```
-Or if using apollo with ground-truth perception:
+Or if running GA-UN and using apollo with ground-truth perception:
 ```
 python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_modular --route_type 'BorregasAve_left' --scenario_type 'one_ped_crossing' --record_every_n_step 5 --n_offsprings 100
 ```
@@ -182,48 +214,19 @@ bootstrap.sh stop && bootstrap.sh
 
 
 
-
-
-## STACK: CARLA0.9.9+LBC
+## STACK3: No Simulation
 ### Setup
-#### Installation of Carla 0.9.9.4
-This code uses CARLA 0.9.9.4. You will need to first install CARLA 0.9.9.4, along with the additional maps.
-See [link](https://github.com/carla-simulator/carla/releases/tag/0.9.9) for more instructions.
-
-For convenience, the following commands can be used to install carla 0.9.9.4.
-
-Download CARLA_0.9.9.4.tar.gz and AdditionalMaps_0.9.9.4.tar.gz from [link](https://github.com/carla-simulator/carla/releases/tag/0.9.9), put it at the same level of this repo, and run
-```
-mkdir carla_0994_no_rss
-tar -xvzf CARLA_0.9.9.4.tar.gz -C carla_0994_no_rss
-```
-move `AdditionalMaps_0.9.9.4.tar.gz` to `carla_0994_no_rss/Import/` and in the folder `carla_0994_no_rss/` run:
-```
-./ImportAssets.sh
-```
-Then, run
-```
-cd carla_0994_no_rss/PythonAPI/carla/dist
-easy_install carla-0.9.9-py3.7-linux-x86_64.egg
-```
-
-#### Download a LBC pretrained model
-LBC model is one of the models supported to be tested. A pretrained-model's checkpoint can be found [here](https://app.wandb.ai/bradyz/2020_carla_challenge_lbc/runs/command_coefficient=0.01_sample_by=even_stage2/files)
-
-Go to the "files" tab, and download the model weights, named "epoch=24.ckpt". Move this model's checkpoint to the `models` folder (May need to create `models` folder under this repo's folder).
-
-
+Need to prepare data in csv format.
 ### Run Fuzzing
 ```
 # GA-UN
-python ga_fuzzing.py -p 2015 -s 8791 -d 8792 --n_gen 2 --pop_size 2 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5
-
-# GA-UN-ADV-NN
-python ga_fuzzing.py -p 2021 -s 8795 -d 8796 --n_gen 15 --pop_size 50 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --rank_mode adv_nn --warm_up_path <path-to-warm-up-run-folder> --warm_up_len 500 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 1
+python ga_fuzzing.py --simulator no_simulation --n_gen 10 --pop_size 20 --algorithm_name nsga2-un --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --n_offsprings 50
 
 # AVFuzzer
-python ga_fuzzing.py -p 2018 -s 8793 -d 8794 --n_gen 200 --pop_size 4 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 0 --n_offsprings 50
+python ga_fuzzing.py --simulator no_simulation --n_gen 50 --pop_size 4 --algorithm_name avfuzzer --has_run_num 200 --no_simulation_data_path no_simulation_script/grid.csv --only_run_unique_cases 0
 ```
+
+
 
 
 ## Citing
