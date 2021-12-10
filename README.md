@@ -227,6 +227,25 @@ python ga_fuzzing.py --simulator no_simulation --n_gen 50 --pop_size 4 --algorit
 ```
 
 
+<!-- ## STACK4: CARLA0.9.11+OpenPilot (TBD)
+### Run Fuzzing
+```
+python ga_fuzzing.py --simulator carla_op --n_gen 10 --pop_size 50 --algorithm_name nsga2 --has_run_num 500 --episode_max_time 200 --only_run_unique_cases 0 --objective_weights 1 0 0 0 -1 -2 0 -m op --route_type 'Town06_Opt_forward'
+```
+
+### Rerun previous simulations
+In `~/openpilot/tools/sim/op_script`,
+```
+python rerun_carla_op.py -p <path-to-the-parent-folder-consisting-of-single-simulation-runs-indexed-by-numbers>
+```
+
+### Rerun scenarios using the best sensor prediction
+Move all the subfolders indexed of previously run simulation results in `~/Docuements/self-driving-cars/2020_CARLA_challenge/run_results_op` to `openpilot/tools/sim/op_script/rerun_folder`, then in `openpilot/tools/sim/op_script`,
+```
+python rerun_carla_op.py -p rerun_folder -m2 best_sensor -w 2.5
+``` -->
+
+
 
 
 ## Citing
