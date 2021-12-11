@@ -243,7 +243,16 @@ python rerun_carla_op.py -p <path-to-the-parent-folder-consisting-of-single-simu
 Move all the subfolders indexed of previously run simulation results in `~/Docuements/self-driving-cars/2020_CARLA_challenge/run_results_op` to `openpilot/tools/sim/op_script/rerun_folder`, then in `openpilot/tools/sim/op_script`,
 ```
 python rerun_carla_op.py -p rerun_folder -m2 best_sensor -w 2.5
-``` -->
+```
+
+### Check unique violations
+In `openpilot/tools/sim/op_script`,
+```
+python trajectory_analysis.py -p <parent folder> -f <fusion folder>
+```
+python trajectory_analysis.py -p rerun_folder/ -f rerun_op/nsga2/Town06_Opt_forward/Town06_Opt_forward/op/2021_12_10_17_12_58/non_bugs
+
+-->
 
 
 
