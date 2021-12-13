@@ -397,8 +397,6 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
     # extra destination request to avoid previous request lost?
     dv.set_destination(destination.position.x, destination.position.z)
 
-    # time.sleep(2)
-
     middle_point = lgsvl.Transform(position=(destination.position + start.position) * 0.5, rotation=start.rotation)
 
     for k, v in customized_data['customized_center_transforms'].items():
@@ -483,7 +481,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         state.transform = ped_point
         print('\n'*3, 'ped.model', ped.model, '\n'*3)
         p = sim.add_agent(pedestrian_types[ped.model], lgsvl.AgentType.PEDESTRIAN, state)
-        p.follow(wps, False)
+        p.follow(wps, False, waypoints_path_type='BezierSpline')
         other_agents.append(p)
 
     for i, vehicle in enumerate(customized_data['vehicles_list']):
@@ -524,7 +522,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         state.transform = vehicle_point
         print('\n'*3, 'vehicle.model', vehicle.model, '\n'*3)
         p = sim.add_agent(vehicle_types[vehicle.model], lgsvl.AgentType.NPC, state)
-        p.follow(wps, False)
+        p.follow(wps, False, waypoints_path_type='BezierSpline')
         other_agents.append(p)
 
     controllables = sim.get_controllables()
