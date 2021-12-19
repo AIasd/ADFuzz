@@ -60,6 +60,10 @@ def initialize_simulator(map, sim_specific_arguments):
     return sim, BRIDGE_HOST, BRIDGE_PORT
 
 
+
+
+
+
 def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, BRIDGE_PORT, events_path):
 
     global accident_happen
@@ -362,6 +366,34 @@ def rotate(x, y, rot_rad):
 
 def initialize_sim(map, sim_specific_arguments, arguments, customized_data, model_id, events_path):
 
+    def npc_on_collision(agent1, agent2, contact):
+        with open(events_path, 'a') as f_out:
+            f_out.write('npc collision'+'\n')
+        name1 = "STATIC OBSTACLE" if agent1 is None else agent1.name
+        name2 = "STATIC OBSTACLE" if agent2 is None else agent2.name
+        print("{} collided with {} at {}".format(name1, name2, contact))
+
+        loc = agent1.transform.position
+        if not agent2:
+            other_agent_type = 'static'
+        else:
+            other_agent_type = agent2.name
+        ego_speed = np.linalg.norm([agent1.state.velocity.x, agent1.state.velocity.y, agent1.state.velocity.z])
+        # d_angle_norm = angle_from_center_view_fov(agent2, agent1)
+        #
+        # if d_angle_norm > 0:
+        #     ego_speed = -1
+
+        data_row = ['npc collision', ego_speed, other_agent_type, loc.x, loc.y]
+        data_row = ','.join([str(data) for data in data_row])
+        with open(events_path, 'a') as f_out:
+            f_out.write(data_row+'\n')
+
+        state = lgsvl.AgentState()
+        state.transform = agent1.state.transform
+        agent1.state(state)
+
+
 
     sim, BRIDGE_HOST, BRIDGE_PORT = initialize_simulator(map, sim_specific_arguments)
 
@@ -481,6 +513,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         state.transform = ped_point
         print('\n'*3, 'ped.model', ped.model, '\n'*3)
         p = sim.add_agent(pedestrian_types[ped.model], lgsvl.AgentType.PEDESTRIAN, state)
+        p.on_collision(npc_on_collision)
         p.follow(wps, False, waypoints_path_type='BezierSpline')
         other_agents.append(p)
 
@@ -522,6 +555,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         state.transform = vehicle_point
         print('\n'*3, 'vehicle.model', vehicle.model, '\n'*3)
         p = sim.add_agent(vehicle_types[vehicle.model], lgsvl.AgentType.NPC, state)
+        p.on_collision(npc_on_collision)
         p.follow(wps, False, waypoints_path_type='BezierSpline')
         other_agents.append(p)
 
