@@ -162,7 +162,6 @@ Pillow==8.2.0
 pipenv==2020.8.13
 pkginfo==1.7.0
 portalocker==1.7.1
-pprofile==2.0.5
 pre-commit==2.13.0
 prometheus-client==0.11.0
 promise==2.3
@@ -181,7 +180,7 @@ pycryptodome==3.10.1
 pyDeprecate==0.3.1
 pydot==1.4.2
 pyflakes==2.3.1
-pygame==2.0.0.dev8
+pygame==2.1.0
 Pygments==2.9.0
 PyJWT==2.1.0
 pylint==2.8.3
