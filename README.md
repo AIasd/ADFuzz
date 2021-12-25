@@ -246,14 +246,13 @@ python rerun_carla_op.py -p rerun_folder -m2 best_sensor -w 2.5
 ```
 
 ### Check the number of unique violations in terms of coverage
-Rename the original folder as "original" and the rerun_folder as "rerun_2.5_best_sensor". Put them into the same parent folder.
 In `openpilot/tools/sim/op_script`,
 ```
 python trajectory_analysis.py -p <parent folder> -f <fusion folder>
 ```
-python trajectory_analysis.py -p rerun_folder/ -f rerun_op/nsga2/Town06_Opt_forward/Town06_Opt_forward/op/2021_12_10_17_12_58/non_bugs
 
 ### Analyze fusion errors in terms of objectives
+Rename the original folder as "original" and the rerun_folder as "rerun_2.5_best_sensor". Put them into the same parent folder.
 In `openpilot/tools/sim/op_script`,
 ```
 python analyze_fusion_errors.py -p <parent_folder>
