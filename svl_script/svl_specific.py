@@ -516,6 +516,8 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
         model_id = '2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921'
     elif ego_car_model == 'apollo_6_modular_2gt':
         model_id = 'f0daed3e-4b1e-46ce-91ec-21149fa31758'
+    elif ego_car_model == 'apollo_6':
+        model_id = 'c354b519-ccf0-4c1c-b3cc-645ed5751bb5'
     else:
         print('ego car model is invalid:', ego_car_model)
         raise

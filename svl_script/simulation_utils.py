@@ -136,6 +136,18 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
                     # 'Traffic Light',
                     'Control'
                 ]
+            elif model_id in ['c354b519-ccf0-4c1c-b3cc-645ed5751bb5']:
+                modules = [
+                    'Localization',
+                    'Perception',
+                    'Transform',
+                    'Routing',
+                    'Prediction',
+                    'Planning',
+                    'Camera',
+                    'Traffic Light',
+                    'Control'
+                ]
             else:
                 raise Exception('unknown model_id: '+ model_id)
 
@@ -428,6 +440,11 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
 
     # extra destination request to avoid previous request lost?
     dv.set_destination(destination.position.x, destination.position.z)
+    # hack: delay several seconds to make sure the routing request succeeds
+    delay_t = 5
+    print('before', delay_t)
+    time.sleep(delay_t)
+    print('after', delay_t)
 
     middle_point = lgsvl.Transform(position=(destination.position + start.position) * 0.5, rotation=start.rotation)
 
