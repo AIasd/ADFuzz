@@ -3,9 +3,14 @@
 ## Introduction
 An open-source software package for fuzzing autonomous driving systems in high-fidelity simulators.
 
+# Requirements
+* OS: Ubuntu 18.04, 20.04
+* CPU: at least 8 cores
+* GPU: at least 8GB memory (if the perception module of Apollo is used)
+
 ### Current support of stacks
 - LBC + CARLA 0.9.9
-- Apollo(6.0/master) + SVL 2021.3
+- Apollo(6.0 or later) + SVL 2021.3
 - No Simulation
 
 ### Current support of algorithms
@@ -133,7 +138,7 @@ python ga_fuzzing.py -p 2018 -s 8793 -d 8794 --n_gen 200 --pop_size 4 -r 'town07
 
 ## STACK2: SVL2021.3+Apollo Master
 ### Setup
-Install SVL2021.3 and Apollo Master following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
+Install SVL2021.3 and Apollo Master (tested upto Apollo 7.0) following [the documentation of Running latest Apollo with SVL Simulator](https://www.svlsimulator.com/docs/system-under-test/apollo-master-instructions/).
 
 
 #### Install SVL Python API
@@ -146,7 +151,7 @@ Following the installation procedure at [https://github.com/lgsvl/PythonAPI](htt
 ```
 git clone https://github.com/AIasd/apollo_channel_extraction.git
 ```
-and put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/` and put `generate_route.sh` inside `apollo`. Note that this step is preferred to be done before building apollo `./apollo.sh build_opt_gpu` to avoid extra building step.
+and put the folder  `channel_extraction` inside `apollo/cyber/python/cyber_py3/`. Note that this step is preferred to be done before building apollo `./apollo.sh build_opt_gpu` to avoid an extra building step.
 
 
 #### Create Apollo Master in Vehicles
