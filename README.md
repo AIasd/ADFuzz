@@ -212,14 +212,18 @@ python svl_script/rerun_svl.py
 ```
 
 ### Add a new map
+Copy `generate_map.sh` from [Apollo 5.0 (SVL fork)](https://github.com/lgsvl/apollo-5.0/blob/simulator/scripts/generate_map.sh) into the docker with the path `apollo/scripts`.
+
 Inside docker,
 ```
 sudo bash scripts/generate_map.sh YOUR_MAP_FOLDER_NAME
 ```
-restart Dreamview to refresh the map list
+
+Restart Dreamview to refresh the map list
 ```
 bootstrap.sh stop && bootstrap.sh
 ```
+
 
 ### Additional Tools
 [Cyber Recorder](https://github.com/ApolloAuto/apollo/blob/master/docs/cyber/CyberRT_Developer_Tools.md)
@@ -228,7 +232,7 @@ bootstrap.sh stop && bootstrap.sh
 
 ## STACK3: No Simulation
 ### Setup
-Need to prepare data in csv format.
+Need to prepare data in csv format similar to `no_simulation_script/grid.csv`.
 ### Run Fuzzing
 ```
 # GA-UN
