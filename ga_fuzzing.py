@@ -1556,8 +1556,8 @@ if __name__ == '__main__':
 
 
         assert fuzzing_arguments.ego_car_model in ['apollo_6_with_signal', 'apollo_6_modular', 'apollo_6_modular_2gt', 'apollo_6']
-        assert fuzzing_arguments.route_type not in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_forward']
-        assert fuzzing_arguments.scenario_type not in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing', 'go_across_junction_sf', 'go_across_junction_ba']
+        assert fuzzing_arguments.route_type in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_forward']
+        assert fuzzing_arguments.scenario_type in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing', 'go_across_junction_sf', 'go_across_junction_ba']
         # [ego_linear_speed, min_d, npc_collisions, ...]
         assert len(fuzzing_arguments.objective_weights) == 10
 
