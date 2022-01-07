@@ -1554,16 +1554,13 @@ if __name__ == '__main__':
         from svl_script.svl_specific import run_svl_simulation, initialize_svl_specific, get_unique_bugs, choose_weight_inds, determine_y_upon_weights, get_all_y
 
 
-        # 'apollo_6_with_signal', 'apollo_6_modular'
-        if fuzzing_arguments.ego_car_model not in ['apollo_6_with_signal', 'apollo_6_modular', 'apollo_6_modular_2gt', 'apollo_6']:
-            print('not supported fuzzing_arguments.ego_car_model for svl:', fuzzing_arguments.ego_car_model)
-            raise
-        if fuzzing_arguments.route_type not in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_forward']:
-            print('not supported fuzzing_arguments.route_type for svl:', fuzzing_arguments.route_type)
-            raise
-        if fuzzing_arguments.scenario_type not in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing', 'go_across_junction_sf', 'go_across_junction_ba']:
-            print('not supported fuzzing_arguments.scenario_type for svl:', fuzzing_arguments.scenario_type)
-            raise
+
+        assert fuzzing_arguments.ego_car_model in ['apollo_6_with_signal', 'apollo_6_modular', 'apollo_6_modular_2gt', 'apollo_6']
+        assert fuzzing_arguments.route_type not in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_forward']
+        assert fuzzing_arguments.scenario_type not in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing', 'go_across_junction_sf', 'go_across_junction_ba']
+        # [ego_linear_speed, min_d, d_angle_norm, offroad_d, wronglane_d, dev_dist, is_offroad, is_wrong_lane, is_run_red_light, is_collision]
+        assert len(fuzzing_arguments.objective_weights) == 10
+
         fuzzing_arguments.ports = [8181]
         fuzzing_arguments.root_folder = 'svl_script/run_results_svl'
 

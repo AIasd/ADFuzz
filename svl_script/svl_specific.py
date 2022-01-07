@@ -139,23 +139,26 @@ def convert_x_to_customized_data(
 def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7., 7., 0., 0., 0., 0., 0.]), verbose=True):
 
     events_path = os.path.join(save_path, "events.txt")
+    npc_events_path = os.path.join(save_path, "npc_events.txt")
     deviations_path = os.path.join(save_path, "deviations.txt")
 
     # set thresholds to avoid too large influence
     ego_linear_speed = 0
     min_d = 20
+    ego_linear_speed_max = 7
+    npc_collisions = 0
+
+    # not actively used
+    # dev_dist_max = 7
+    d_angle_norm = 1
     offroad_d = 7
     wronglane_d = 7
     dev_dist = 0
-    d_angle_norm = 1
-
-    ego_linear_speed_max = 7
-    dev_dist_max = 7
-
     is_offroad = 0
     is_wrong_lane = 0
     is_run_red_light = 0
     is_collision = 0
+
     if os.path.exists(deviations_path):
         with open(deviations_path, "r") as f_in:
             for line in f_in:
@@ -163,14 +166,6 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
                 d = float(d)
                 if type == "min_d":
                     min_d = np.min([min_d, d])
-                elif type == "offroad_d":
-                    offroad_d = np.min([offroad_d, d])
-                elif type == "wronglane_d":
-                    wronglane_d = np.min([wronglane_d, d])
-                elif type == "dev_dist":
-                    dev_dist = np.max([dev_dist, d])
-                elif type == "d_angle_norm":
-                    d_angle_norm = np.min([d_angle_norm, d])
 
     x = None
     y = None
@@ -193,13 +188,22 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
 
     # limit impact of too large values
     ego_linear_speed = np.min([ego_linear_speed, ego_linear_speed_max])
-    dev_dist = np.min([dev_dist, dev_dist_max])
+    # dev_dist = np.min([dev_dist, dev_dist_max])
+
+    if os.path.exists(npc_events_path):
+        c = 0
+        with open(npc_events_path, "r") as f_in:
+            for line in f_in:
+                tokens = line.split(",")
+                if tokens[0] == 'npc collision':
+                    c += 1
+        npc_collisions = int(c // 2)
 
     return (
         [
             ego_linear_speed,
             min_d,
-            d_angle_norm,
+            npc_collisions, # d_angle_norm,
             offroad_d,
             wronglane_d,
             dev_dist,
@@ -216,7 +220,7 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
 
 def check_bug(objectives):
     # speed needs to be larger than 0.1 to avoid false positive
-    return objectives[0] > 0.1 or objectives[-3] or objectives[-2] or objectives[-1]
+    return objectives[0] > 0.1 and objectives[2] == 0
 
 def get_if_bug_list(objectives_list):
     if_bug_list = []
@@ -235,10 +239,6 @@ def process_specific_bug(
 
     specific_bugs = np.array(bugs)[chosen_bugs]
     specific_bugs_inds_list = np.array(bugs_inds_list)[chosen_bugs]
-
-    # unique_specific_bugs, specific_distinct_inds = get_distinct_data_points(
-    #     specific_bugs, mask, xl, xu, p, c, th
-    # )
 
     specific_distinct_inds = is_distinct_vectorized(specific_bugs, [], mask, xl, xu, p, c, th, verbose=verbose)
     unique_specific_bugs = specific_bugs[specific_distinct_inds]
@@ -263,16 +263,7 @@ def classify_bug_type(objectives, object_type=''):
         if not bug_str:
             bug_str = 'unknown_collision'+'_'+object_type
         bug_type = 1
-    elif objectives[-3]:
-        bug_str = 'offroad'
-        bug_type = 2
-    elif objectives[-2]:
-        bug_str = 'wronglane'
-        bug_type = 3
-    if objectives[-1]:
-        bug_str += 'run_red_light'
-        if bug_type > 4:
-            bug_type = 4
+
     return bug_type, bug_str
 
 def get_unique_bugs(

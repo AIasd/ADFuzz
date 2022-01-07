@@ -3,7 +3,7 @@
 ## Introduction
 An open-source software package for fuzzing autonomous driving systems in high-fidelity simulators.
 
-# Requirements
+### Requirements
 * OS: Ubuntu 18.04, 20.04
 * CPU: at least 8 cores
 * GPU: at least 8GB memory (if the perception module of Apollo is used)

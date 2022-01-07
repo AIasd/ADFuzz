@@ -1,13 +1,3 @@
-'''
-fix modular mode traffic light (by manually control its cycle?)
-figure out determinism on different runs and different step_time (for both modular and non-modular)
-rerun code
-save in parallel (run a separate thread to record environment values, cyber-recorder, cyber-RT python API: https://github.com/ApolloAuto/apollo/blob/master/docs/cyber/CyberRT_Python_API.md, camera proto https://github.com/ApolloAuto/apollo/blob/master/modules/drivers/camera/proto/config.proto)
-tune objectives
-top down camera
-'''
-
-
 import os
 import lgsvl
 import time
@@ -376,38 +366,26 @@ def rotate(x, y, rot_rad):
     return x_rot, y_rot
 
 
-def initialize_sim(map, sim_specific_arguments, arguments, customized_data, model_id, events_path):
+def initialize_sim(map, sim_specific_arguments, arguments, customized_data, model_id):
+
+    sim, BRIDGE_HOST, BRIDGE_PORT = initialize_simulator(map, sim_specific_arguments)
+
+    events_path = os.path.join(arguments.deviations_folder, "events.txt")
+    npc_events_path = os.path.join(arguments.deviations_folder, "npc_events.txt")
 
     def npc_on_collision(agent1, agent2, contact):
-        with open(events_path, 'a') as f_out:
-            f_out.write('npc collision'+'\n')
         name1 = "STATIC OBSTACLE" if agent1 is None else agent1.name
         name2 = "STATIC OBSTACLE" if agent2 is None else agent2.name
         print("{} collided with {} at {}".format(name1, name2, contact))
 
         loc = agent1.transform.position
-        if not agent2:
-            other_agent_type = 'static'
-        else:
-            other_agent_type = agent2.name
         ego_speed = np.linalg.norm([agent1.state.velocity.x, agent1.state.velocity.y, agent1.state.velocity.z])
-        # d_angle_norm = angle_from_center_view_fov(agent2, agent1)
-        #
-        # if d_angle_norm > 0:
-        #     ego_speed = -1
 
-        data_row = ['npc collision', ego_speed, other_agent_type, loc.x, loc.y]
+        data_row = ['npc collision', ego_speed, name2, loc.x, loc.y]
         data_row = ','.join([str(data) for data in data_row])
-        with open(events_path, 'a') as f_out:
+        with open(npc_events_path, 'a') as f_out:
             f_out.write(data_row+'\n')
 
-        state = lgsvl.AgentState()
-        state.transform = agent1.state.transform
-        agent1.state(state)
-
-
-
-    sim, BRIDGE_HOST, BRIDGE_PORT = initialize_simulator(map, sim_specific_arguments)
 
     if len(arguments.route_info["location_list"]) == 0:
         spawns = sim.get_spawn()
@@ -588,9 +566,9 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
 
     return sim, ego, destination
 
-def run_sim_with_initialization(q, duration, time_scale, map, sim_specific_arguments, arguments, customized_data, model_id, events_path):
+def run_sim_with_initialization(q, duration, time_scale, map, sim_specific_arguments, arguments, customized_data, model_id):
 
-    sim, ego, destination = initialize_sim(map, sim_specific_arguments, arguments, customized_data,model_id, events_path)
+    sim, ego, destination = initialize_sim(map, sim_specific_arguments, arguments, customized_data,model_id)
     print('start run sim')
     sim.run(time_limit=duration, time_scale=time_scale)
 
@@ -606,7 +584,7 @@ def run_sim_with_initialization(q, duration, time_scale, map, sim_specific_argum
 
 def start_simulation(customized_data, arguments, sim_specific_arguments, launch_server, episode_max_time):
 
-    events_path = os.path.join(arguments.deviations_folder, "events.txt")
+
     deviations_path = os.path.join(arguments.deviations_folder, 'deviations.txt')
     main_camera_folder = os.path.join(arguments.deviations_folder, 'main_camera_data')
 
@@ -629,39 +607,39 @@ def start_simulation(customized_data, arguments, sim_specific_arguments, launch_
 
         from multiprocessing import Process, Queue
         q = Queue()
-        p = Process(target=run_sim_with_initialization, args=(q, duration, time_scale, map, sim_specific_arguments, arguments, customized_data, model_id, events_path))
+        p = Process(target=run_sim_with_initialization, args=(q, duration, time_scale, map, sim_specific_arguments, arguments, customized_data, model_id))
         p.daemon = True
         p.start()
         receive_zmq(q, path_list, arguments.record_every_n_step)
         p.terminate()
 
 
-    else:
-        measurements_path = os.path.join(arguments.deviations_folder, 'measurements.txt')
-
-        sim = initialize_sim()
-        step_time = 30
-        step_rate = 1.0 / step_time
-        steps = int(duration * step_rate)
-
-        cur_values = emptyobject(min_d=10000, d_angle_norm=1)
-
-        for i in range(steps):
-            sim.run(time_limit=step_time, time_scale=1)
-            if i % arguments.record_every_n_step == 0:
-                save_camera(ego, main_camera_folder, counter, i)
-
-            save_measurement(ego, measurements_path)
-            gather_info(ego, other_agents, cur_values, deviations_path)
-
-            d_to_dest = norm_2d(ego.transform.position, destination.position)
-            # print('d_to_dest', d_to_dest)
-            if d_to_dest < 5:
-                print('ego car reachs destination successfully')
-                break
-
-            if accident_happen:
-                break
+    # else:
+    #     measurements_path = os.path.join(arguments.deviations_folder, 'measurements.txt')
+    #
+    #     sim = initialize_sim()
+    #     step_time = 30
+    #     step_rate = 1.0 / step_time
+    #     steps = int(duration * step_rate)
+    #
+    #     cur_values = emptyobject(min_d=10000, d_angle_norm=1)
+    #
+    #     for i in range(steps):
+    #         sim.run(time_limit=step_time, time_scale=1)
+    #         if i % arguments.record_every_n_step == 0:
+    #             save_camera(ego, main_camera_folder, counter, i)
+    #
+    #         save_measurement(ego, measurements_path)
+    #         gather_info(ego, other_agents, cur_values, deviations_path)
+    #
+    #         d_to_dest = norm_2d(ego.transform.position, destination.position)
+    #         # print('d_to_dest', d_to_dest)
+    #         if d_to_dest < 5:
+    #             print('ego car reachs destination successfully')
+    #             break
+    #
+    #         if accident_happen:
+    #             break
 
 
 
