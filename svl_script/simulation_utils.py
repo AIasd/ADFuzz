@@ -366,12 +366,9 @@ def rotate(x, y, rot_rad):
     return x_rot, y_rot
 
 
-def initialize_sim(map, sim_specific_arguments, arguments, customized_data, model_id):
+def initialize_sim(map, sim_specific_arguments, arguments, customized_data, model_id, events_path, npc_events_path):
 
     sim, BRIDGE_HOST, BRIDGE_PORT = initialize_simulator(map, sim_specific_arguments)
-
-    events_path = os.path.join(arguments.deviations_folder, "events.txt")
-    npc_events_path = os.path.join(arguments.deviations_folder, "npc_events.txt")
 
     def npc_on_collision(agent1, agent2, contact):
         name1 = "STATIC OBSTACLE" if agent1 is None else agent1.name
@@ -381,7 +378,12 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         loc = agent1.transform.position
         ego_speed = np.linalg.norm([agent1.state.velocity.x, agent1.state.velocity.y, agent1.state.velocity.z])
 
-        data_row = ['npc collision', ego_speed, name2, loc.x, loc.y]
+
+        collision_type = 'npc collision'
+        if name2 == model_id:
+            collision_type = 'ego collision'
+
+        data_row = [collision_type, ego_speed, name2, loc.x, loc.y]
         data_row = ','.join([str(data) for data in data_row])
         with open(npc_events_path, 'a') as f_out:
             f_out.write(data_row+'\n')
@@ -568,7 +570,10 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
 
 def run_sim_with_initialization(q, duration, time_scale, map, sim_specific_arguments, arguments, customized_data, model_id):
 
-    sim, ego, destination = initialize_sim(map, sim_specific_arguments, arguments, customized_data,model_id)
+    events_path = os.path.join(arguments.deviations_folder, "events.txt")
+    npc_events_path = os.path.join(arguments.deviations_folder, "npc_events.txt")
+
+    sim, ego, destination = initialize_sim(map, sim_specific_arguments, arguments, customized_data, model_id, events_path, npc_events_path)
     print('start run sim')
     sim.run(time_limit=duration, time_scale=time_scale)
 
