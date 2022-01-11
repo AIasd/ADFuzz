@@ -15,6 +15,7 @@ An open-source software package for fuzzing autonomous driving systems in high-f
 
 ### Current support of algorithms
 - Random (`-a random --only_run_unique_cases 0`)
+- Random-UN (`-a random-un`)
 - GA (`-a nsga2 --only_run_unique_cases 0`)
 - GA-UN (`-a nsga2-un`)
 - NSGA2-SM (`-a nsga2 --rank_mode regression_nn --use_single_objective 0 --only_run_unique_cases 0 --regression_nn_use_running_data 0`)
