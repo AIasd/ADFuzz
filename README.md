@@ -19,10 +19,12 @@ An open-source software package for fuzzing autonomous driving systems in high-f
 - GA (`-a nsga2 --only_run_unique_cases 0`)
 - GA-UN (`-a nsga2-un`)
 - NSGA2-SM (`-a nsga2 --rank_mode regression_nn --use_single_objective 0 --only_run_unique_cases 0 --regression_nn_use_running_data 0`)
+- NSGA2-UN-SM-A (`-a nsga2 --rank_mode regression_nn --use_single_objective 0`)
 - NSGA2-DT (`-a nsga2-dt --use_single_objective 0 --only_run_unique_cases 0 --outer_iterations 3`)
 - AV-Fuzzer (`-a avfuzzer --only_run_unique_cases 0`)
 - AutoFuzz (GA-UN-NN-GRAD) (`-a nsga2-un --rank_mode adv_nn` )
 
+For NSGA2-SM, `warm_up_path` and `warm_up_len` must be specified. For AutoFuzz (GA-UN-NN-GRAD) and NSGA2-UN-SM-A, they can also be specified.
 
 ## Found Traffic Violation Demos
 ### pid-1 controller collides with a pedestrian:
