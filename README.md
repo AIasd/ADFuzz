@@ -1,30 +1,36 @@
 # ADFuzz
 
 ## Introduction
-An open-source software package for fuzzing autonomous driving systems in high-fidelity simulators.
+An open-source software package for fuzzing autonomous driving systems in high-fidelity simulators. It is also currently actively maintained and developed.
 
 ### Requirements
 * OS: Ubuntu 18.04, 20.04
-* CPU: at least 8 cores
-* GPU: at least 8GB memory (if the perception module of Apollo is used)
+* CPU: >= 8 cores
+* GPU: >= 6GB memory (>= 8GB if the perception module of Apollo is used)
 
 ### Current support of stacks
 - LBC + CARLA 0.9.9
 - Apollo(6.0 or later) + SVL 2021.3
 - No Simulation
 
-### Current support of algorithms
-- Random (`-a random --only_run_unique_cases 0`)
-- Random-UN (`-a random-un`)
-- GA (`-a nsga2 --only_run_unique_cases 0`)
-- GA-UN (`-a nsga2-un`)
-- NSGA2-SM (`-a nsga2 --rank_mode regression_nn --use_single_objective 0 --only_run_unique_cases 0 --regression_nn_use_running_data 0`)
-- NSGA2-UN-SM-A (`-a nsga2 --rank_mode regression_nn --use_single_objective 0`)
+### Current support of algorithms and variations
+ADFuzz currently support several algorithms and variations listed below. The relevant algorithm_name and key parameters are also mentioned.
+
+#### Algorithms
+- NSGA2-SM (`-a nsga2 --rank_mode regression_nn --use_single_objective 0 --only_run_unique_cases 0 --regression_nn_use_running_data 0 --warm_up_path <path-to-warm-up-folder> --warm_up_len 500`)
 - NSGA2-DT (`-a nsga2-dt --use_single_objective 0 --only_run_unique_cases 0 --outer_iterations 3`)
 - AV-Fuzzer (`-a avfuzzer --only_run_unique_cases 0`)
 - AutoFuzz (GA-UN-NN-GRAD) (`-a nsga2-un --rank_mode adv_nn` )
 
-For NSGA2-SM, `warm_up_path` and `warm_up_len` must be specified. For AutoFuzz (GA-UN-NN-GRAD) and NSGA2-UN-SM-A, they can also be specified.
+#### Baselines/Variations
+- Random (`-a random --only_run_unique_cases 0`)
+- Random-UN (`-a random-un`)
+- GA (`-a nsga2 --only_run_unique_cases 0`)
+- GA-UN (`-a nsga2-un`)
+- NSGA2-UN-SM-A (`-a nsga2 --rank_mode regression_nn --use_single_objective 0`)
+
+#### Additional Explanation
+It should be noted that for NSGA2-SM, additional parameters like `warm_up_path` and `warm_up_len` must be specified. For AutoFuzz (GA-UN-NN-GRAD) and NSGA2-UN-SM-A, they can also be specified. `warm_up_path` refers to the result folder of a run of the initial warm-up stage. Algorithms like Random and GA are commonly used. `warm_up_len` refers to the results of how many simulation instances from this warm-up stage are leveraged.
 
 ## Found Traffic Violation Demos
 ### pid-1 controller collides with a pedestrian:
