@@ -153,7 +153,7 @@ def specify_args():
 
 def parse_fuzzing_arguments():
     # [ego_linear_speed, min_d, d_angle_norm, offroad_d, wronglane_d, dev_dist, is_offroad, is_wrong_lane, is_run_red_light, is_collision]
-    default_objective_weights = np.array([-1., 1., 1., 1., 1., -1., 0., 0., 0., 0.])
+    default_objective_weights = np.array([-1., 1., 1., 0., 0., 0., 0., 0., 0., 0.])
     default_objectives = np.array([0., 20., 1., 7., 7., 0., 0., 0., 0., 0.])
     default_check_unique_coeff = [0, 0.1, 0.5]
 

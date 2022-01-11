@@ -167,8 +167,7 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
                 if type == "min_d":
                     min_d = np.min([min_d, d])
 
-    x = None
-    y = None
+    contact_x, contact_y = None, None
     object_type = None
 
     if not os.path.exists(events_path):
@@ -179,11 +178,19 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
             tokens = f_in.read().split('\n')[0].split(',')
             if tokens[0] == 'fail_to_finish':
                 pass
-            else:
-                _, ego_linear_speed, object_type, x, y = tokens
-                ego_linear_speed, x, y = float(ego_linear_speed), float(x), float(y)
+            elif tokens[0] == 'collision':
+                object_type = tokens[1]
+                ego_x, ego_y, ego_z, ego_vx, ego_vy, ego_vz, other_x, other_y, other_z, other_vx, other_vy, other_vz, contact_x, contact_y, contact_z = [float(tok) for tok in tokens[3:]]
+
+                ego_speed = np.linalg.norm([ego_vx, ego_vy, ego_vz])
+                # other_speed = np.linalg.norm([other_vx, other_vy, other_vz])
+
+                ego_linear_speed = ego_speed
+
                 if ego_linear_speed > 0.1:
                     is_collision = 1
+            else:
+                pass
 
 
     # limit impact of too large values
@@ -212,7 +219,7 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
             is_wrong_lane,
             is_run_red_light,
         ],
-        (x, y),
+        (contact_x, contact_y),
         object_type,
         route_completion,
     )

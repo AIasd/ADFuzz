@@ -14,10 +14,13 @@ An open-source software package for fuzzing autonomous driving systems in high-f
 - No Simulation
 
 ### Current support of algorithms
-- AutoFuzz (GA-UN-NN-GRAD)
-- NSGA2-SM
-- NSGA2-DT
-- AV-Fuzzer
+- Random (`-a random --only_run_unique_cases 0`)
+- GA (`-a nsga2 --only_run_unique_cases 0`)
+- GA-UN (`-a nsga2-un`)
+- NSGA2-SM (`-a nsga2 --rank_mode regression_nn --use_single_objective 0 --only_run_unique_cases 0 --regression_nn_use_running_data 0`)
+- NSGA2-DT (`-a nsga2-dt --use_single_objective 0 --only_run_unique_cases 0 --outer_iterations 3`)
+- AV-Fuzzer (`-a avfuzzer --only_run_unique_cases 0`)
+- AutoFuzz (GA-UN-NN-GRAD) (`-a nsga2-un --rank_mode adv_nn` )
 
 
 ## Found Traffic Violation Demos
@@ -192,13 +195,13 @@ and finally run the channel_extraction
 
 
 Finally, in a third terminal:
-If running GA-UN and using apollo with ground-truth traffic signal:
+If running GA-UN and using apollo with only ground-truth traffic signal:
 ```
 python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_with_signal --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 50
 ```
-Or if running GA-UN and using apollo with ground-truth perception:
+Or if running GA-UN and using apollo with all ground-truth perception:
 ```
-python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_modular_2gt --route_type 'BorregasAve_left' --scenario_type 'one_ped_crossing' --record_every_n_step 5 --n_offsprings 100
+python ga_fuzzing.py --simulator svl --n_gen 2 --pop_size 2 --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --episode_max_time 35 --ego_car_model apollo_6_modular_2gt --route_type 'BorregasAve_left' --scenario_type 'turn_left_one_ped_and_one_vehicle' --record_every_n_step 5 --n_offsprings 100
 ```
 
 Or if running AVFuzzer

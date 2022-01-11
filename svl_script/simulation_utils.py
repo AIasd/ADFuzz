@@ -65,20 +65,18 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
         name1 = "STATIC OBSTACLE" if agent1 is None else agent1.name
         name2 = "STATIC OBSTACLE" if agent2 is None else agent2.name
         print("{} collided with {} at {}".format(name1, name2, contact))
-        print('v_ego:', agent1.state.velocity)
 
-        loc = agent1.transform.position
         if not agent2:
             other_agent_type = 'static'
         else:
             other_agent_type = agent2.name
-        ego_speed = np.linalg.norm([agent1.state.velocity.x, agent1.state.velocity.y, agent1.state.velocity.z])
-        # d_angle_norm = angle_from_center_view_fov(agent2, agent1)
-        #
-        # if d_angle_norm > 0:
-        #     ego_speed = -1
+        print('contact', contact.__dict__)
+        print('type(contact)', type(contact))
+        print('contact.x', contact.x)
 
-        data_row = ['collision', ego_speed, other_agent_type, loc.x, loc.y]
+        data_row = ['collision', other_agent_type, agent2.uid, agent1.transform.position.x, agent1.transform.position.y, agent1.transform.position.z, agent1.state.velocity.x, agent1.state.velocity.y, agent1.state.velocity.z,
+        agent2.transform.position.x, agent2.transform.position.y, agent2.transform.position.z, agent2.state.velocity.x, agent2.state.velocity.y, agent2.state.velocity.z, contact.x, contact.y, contact.z]
+
         data_row = ','.join([str(data) for data in data_row])
         with open(events_path, 'a') as f_out:
             f_out.write(data_row+'\n')
@@ -378,7 +376,6 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         loc = agent1.transform.position
         ego_speed = np.linalg.norm([agent1.state.velocity.x, agent1.state.velocity.y, agent1.state.velocity.z])
 
-
         collision_type = 'npc collision'
         if name2 == model_id:
             collision_type = 'ego collision'
@@ -514,6 +511,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         p.follow(wps, False, waypoints_path_type='BezierSpline')
         other_agents.append(p)
 
+
     for i, vehicle in enumerate(customized_data['vehicles_list']):
         center_key_i = "vehicle_center_transform_"+str(i)
         if center_key_i in customized_data:
@@ -564,7 +562,8 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
             control_policy = "trigger=500;green=20;yellow=2;red=5;loop"
             signal.control(control_policy)
 
-
+    with open(npc_events_path, 'a') as f_out:
+        f_out.write('npc_agents_uids,'+','.join(list(sim.agents.keys()))+'\n')
 
     return sim, ego, destination
 
