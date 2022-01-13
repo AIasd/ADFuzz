@@ -152,7 +152,7 @@ def specify_args():
     return arguments
 
 def parse_fuzzing_arguments():
-    # [ego_linear_speed, min_d, d_angle_norm, offroad_d, wronglane_d, dev_dist, is_offroad, is_wrong_lane, is_run_red_light, is_collision]
+    # the default is for carla+lbc stack
     default_objective_weights = np.array([-1., 1., 1., 0., 0., 0., 0., 0., 0., 0.])
     default_objectives = np.array([0., 20., 1., 7., 7., 0., 0., 0., 0., 0.])
     default_check_unique_coeff = [0, 0.1, 0.5]
@@ -199,11 +199,11 @@ def parse_fuzzing_arguments():
 
 
     # algorithm related
-    parser.add_argument("--n_gen", type=int, default=2)
-    parser.add_argument("--pop_size", type=int, default=50)
+    parser.add_argument("--n_gen", type=int, default=10, help='the number of generations to run.')
+    parser.add_argument("--pop_size", type=int, default=50, help='population size at each generation.')
+    parser.add_argument("--has_run_num", type=int, default=1000, help='the total number of simulations to run before the algorithm ends.')
     parser.add_argument("--survival_multiplier", type=int, default=1)
     parser.add_argument("--n_offsprings", type=int, default=300)
-    parser.add_argument("--has_run_num", type=int, default=1000)
     parser.add_argument('--sample_multiplier', type=int, default=200)
     parser.add_argument('--mating_max_iterations', type=int, default=200)
     parser.add_argument('--only_run_unique_cases', type=int, default=1)

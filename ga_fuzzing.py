@@ -1543,6 +1543,9 @@ if __name__ == '__main__':
         from carla_specific_utils.setup_labels_and_bounds import generate_fuzzing_content
         from carla_specific_utils.carla_specific import run_carla_simulation, initialize_carla_specific, correct_spawn_locations_all, get_unique_bugs, choose_weight_inds, determine_y_upon_weights, get_all_y
 
+        assert len(fuzzing_arguments.objective_weights) == 10
+        fuzzing_arguments.objective_labels = ['ego_linear_speed', 'min_d', 'd_angle_norm', 'offroad_d', 'wronglane_d', 'dev_dist', 'is_offroad', 'is_wrong_lane', 'is_run_red_light', 'is_collision']
+
         customized_config = customized_bounds_and_distributions[fuzzing_arguments.scenario_type]
         fuzzing_content = generate_fuzzing_content(customized_config)
         sim_specific_arguments = initialize_carla_specific(fuzzing_arguments)
@@ -1558,8 +1561,10 @@ if __name__ == '__main__':
         assert fuzzing_arguments.ego_car_model in ['apollo_6_with_signal', 'apollo_6_modular', 'apollo_6_modular_2gt', 'apollo_6']
         assert fuzzing_arguments.route_type in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_forward']
         assert fuzzing_arguments.scenario_type in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing', 'go_across_junction_sf', 'go_across_junction_ba']
-        # [ego_linear_speed, min_d, npc_collisions, ...]
+
         assert len(fuzzing_arguments.objective_weights) == 10
+        # The later fields are ignored for now
+        fuzzing_arguments.objective_labels = ['ego_linear_speed', 'min_d', 'npc_collisions'] + ['']*7
 
         fuzzing_arguments.ports = [8181]
         fuzzing_arguments.root_folder = 'svl_script/run_results_svl'
@@ -1588,10 +1593,11 @@ if __name__ == '__main__':
 
 
         assert fuzzing_arguments.ego_car_model in ['op', 'op_radar', 'mathwork_in_lane', 'mathwork_all', 'mathwork_moving', 'best_sensor', 'ground_truth']
-        # min_d, collision, speed, d_angle_norm, is_bug, fusion_error_perc, diversity
+
         assert len(fuzzing_arguments.objective_weights) == 7
         # fuzzing_arguments.objective_weights = np.array([1., 0., 0., 0., -1., -2., -1.])
         fuzzing_arguments.default_objectives = np.array([130., 0., 0., 1., 0., 0., 0.])
+        fuzzing_arguments.objective_labels = ['min_d', 'collision', 'speed', 'd_angle_norm', 'is_bug', 'fusion_error_perc', 'diversity']
 
         customized_config = customized_bounds_and_distributions[fuzzing_arguments.scenario_type]
         fuzzing_content = generate_fuzzing_content(customized_config)

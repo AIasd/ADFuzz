@@ -286,7 +286,7 @@ def receive_zmq(q, path_list, record_every_n_step):
                                             if ego_i_d < min_ego_i_d:
                                                 min_ego_i_d = ego_i_d
                                                 f_out.write('min_d,'+str(min_ego_i_d)+'\n')
-                                                print('time step', k, 'min_d', min_ego_i_d)
+                                                # print('time step', k, 'min_d', min_ego_i_d)
                             socket_odometry.close()
                             socket_perception_obstacles.close()
                             socket_front_camera.close()
@@ -419,9 +419,9 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
     dv.set_destination(destination.position.x, destination.position.z)
     # hack: delay several seconds to make sure the routing request succeeds
     delay_t = 5
-    print('before', delay_t)
+    # print('before', delay_t)
     time.sleep(delay_t)
-    print('after', delay_t)
+    # print('after', delay_t)
 
     middle_point = lgsvl.Transform(position=(destination.position + start.position) * 0.5, rotation=start.rotation)
 
@@ -486,7 +486,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         for j, wp in enumerate(ped.waypoints):
             center_key_i_j = "pedestrian_"+str(i)+"_center_transform_"+str(j)
             if center_key_i_j in customized_data:
-                print(center_key_i_j)
+                # print(center_key_i_j)
                 middle_point_i = customized_data[center_key_i_j]
                 rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
 
@@ -505,7 +505,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
 
         state = lgsvl.AgentState()
         state.transform = ped_point
-        print('\n'*3, 'ped.model', ped.model, '\n'*3)
+        # print('\n'*3, 'ped.model', ped.model, '\n'*3)
         p = sim.add_agent(pedestrian_types[ped.model], lgsvl.AgentType.PEDESTRIAN, state)
         p.on_collision(npc_on_collision)
         p.follow(wps, False, waypoints_path_type='BezierSpline')
@@ -531,7 +531,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
         for j, wp in enumerate(vehicle.waypoints):
             center_key_i_j = "vehicle_"+str(i)+"_center_transform_"+str(j)
             if center_key_i_j in customized_data:
-                print(center_key_i_j)
+                # print(center_key_i_j)
                 middle_point_i = customized_data[center_key_i_j]
                 rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
 
@@ -548,7 +548,7 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
 
         state = lgsvl.AgentState()
         state.transform = vehicle_point
-        print('\n'*3, 'vehicle.model', vehicle.model, '\n'*3)
+        # print('\n'*3, 'vehicle.model', vehicle.model, '\n'*3)
         p = sim.add_agent(vehicle_types[vehicle.model], lgsvl.AgentType.NPC, state)
         p.on_collision(npc_on_collision)
         p.follow(wps, False, waypoints_path_type='BezierSpline')
