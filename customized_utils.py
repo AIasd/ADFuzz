@@ -210,7 +210,7 @@ def parse_fuzzing_arguments():
     parser.add_argument('--consider_interested_bugs', type=int, default=1)
 
     parser.add_argument("--outer_iterations", type=int, default=3)
-    parser.add_argument('--objective_weights', nargs='+', type=float, default=default_objective_weights)
+    parser.add_argument('--objective_weights', nargs='+', type=float, default=default_objective_weights, help='the weights corresponding to each objective when estimating the fitness function.')
     parser.add_argument('--default_objectives', nargs='+', type=float, default=default_objectives)
     parser.add_argument("--standardize_objective", type=int, default=1)
     parser.add_argument("--normalize_objective", type=int, default=1)
@@ -218,7 +218,7 @@ def parse_fuzzing_arguments():
 
 
 
-    parser.add_argument('--check_unique_coeff', nargs='+', type=float, default=default_check_unique_coeff)
+    parser.add_argument('--check_unique_coeff', nargs='+', type=float, default=default_check_unique_coeff, help='the thresholds (norm, th_2, th_1) used to count unique bugs. Currently, norm is always set to 0. For a given type of traffic  violation (collision or out-of-road), two violations caused by specific scenarios x and y are unique if at least th1 of the total number of changeable fields are different between the two. For a continuous field, the corresponding normalized values should be distinguishable by at least th2. (See section 4.1 in our paper for more details.)')
     parser.add_argument('--use_single_objective', type=int, default=1)
     parser.add_argument('--rank_mode', type=str, default='none')
     parser.add_argument('--ranking_model', type=str, default='nn_pytorch')
