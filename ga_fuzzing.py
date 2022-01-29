@@ -1564,7 +1564,7 @@ if __name__ == '__main__':
 
         assert len(fuzzing_arguments.objective_weights) == 10
         # The later fields are ignored for now
-        fuzzing_arguments.objective_labels = ['ego_linear_speed', 'min_d', 'npc_collisions'] + ['']*7
+        fuzzing_arguments.objective_labels = ['ego_linear_speed', 'min_d', 'npc_collisions', 'diversity'] + ['']*6
 
         fuzzing_arguments.ports = [8181]
         fuzzing_arguments.root_folder = 'svl_script/run_results_svl'

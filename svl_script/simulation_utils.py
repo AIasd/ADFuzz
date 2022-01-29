@@ -70,12 +70,16 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
             other_agent_type = 'static'
         else:
             other_agent_type = agent2.name
-        print('contact', contact.__dict__)
-        print('type(contact)', type(contact))
-        print('contact.x', contact.x)
+
+        contact_x, contact_y, contact_z = 0, 0, 0
+        if contact:
+            print('contact', contact.__dict__)
+            print('type(contact)', type(contact))
+            print('contact.x', contact.x)
+            contact_x, contact_y, contact_z = contact.x, contact.y, contact.z
 
         data_row = ['collision', other_agent_type, agent2.uid, agent1.transform.position.x, agent1.transform.position.y, agent1.transform.position.z, agent1.state.velocity.x, agent1.state.velocity.y, agent1.state.velocity.z,
-        agent2.transform.position.x, agent2.transform.position.y, agent2.transform.position.z, agent2.state.velocity.x, agent2.state.velocity.y, agent2.state.velocity.z, contact.x, contact.y, contact.z]
+        agent2.transform.position.x, agent2.transform.position.y, agent2.transform.position.z, agent2.state.velocity.x, agent2.state.velocity.y, agent2.state.velocity.z, contact_x, contact_y, contact_z]
 
         data_row = ','.join([str(data) for data in data_row])
         with open(events_path, 'a') as f_out:

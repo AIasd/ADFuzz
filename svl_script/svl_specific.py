@@ -151,7 +151,6 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
     # not actively used
     # dev_dist_max = 7
     d_angle_norm = 1
-    offroad_d = 7
     wronglane_d = 7
     dev_dist = 0
     is_offroad = 0
@@ -211,7 +210,7 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
             ego_linear_speed,
             min_d,
             npc_collisions, # d_angle_norm,
-            offroad_d,
+            0,
             wronglane_d,
             dev_dist,
             is_collision,
@@ -530,7 +529,6 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
     arguments = emptyobject(deviations_folder=deviations_folder, model_id=model_id, route_info=route_info, record_every_n_step=fuzzing_arguments.record_every_n_step, counter=counter)
 
 
-
     start_simulation(customized_data, arguments, sim_specific_arguments, launch_server, episode_max_time)
     objectives, loc, object_type, route_completion = estimate_objectives(deviations_folder)
 
@@ -556,6 +554,9 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
             cur_folder = make_hierarchical_dir([bug_folder, str(counter)])
         else:
             cur_folder = make_hierarchical_dir([non_bug_folder, str(counter)])
+
+    # get trajectory vector
+    trajectory_vector = estimate_trajectory_vector(deviations_folder, is_bug)
 
 
 
@@ -590,6 +591,9 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
 
         # for correction
         # 'all_final_generated_transforms': all_final_generated_transforms,
+
+        # diversity specific
+        'trajectory_vector': trajectory_vector,
     }
 
 
@@ -599,8 +603,6 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
         pickle.dump(run_info, f_out)
 
 
-
-
     return objectives, run_info
 
 
@@ -608,3 +610,58 @@ def initialize_svl_specific(fuzzing_arguments):
     route_info = customized_routes[fuzzing_arguments.route_type]
     sim_specific_arguments = emptyobject(route_info=route_info, sim=None)
     return sim_specific_arguments
+
+
+def estimate_trajectory_vector(save_path, is_bug):
+    from svl_script.analysis import get_bug_traj
+    events_path = os.path.join(save_path, 'events.txt')
+    npc_events_path = os.path.join(save_path, 'npc_events.txt')
+    bug, fields_limit = get_bug_traj(events_path, npc_events_path)
+
+    cur_vec = []
+    for i, (_, fl) in enumerate(fields_limit.items()):
+        if is_bug:
+            tmp_vec = np.zeros(fl)
+            print('bug[i]', bug, i, bug[i])
+            tmp_vec[bug[i]] = 1
+        else:
+            tmp_vec = np.ones(fl)*-1
+        cur_vec.append(tmp_vec)
+    cur_vec = np.concatenate(cur_vec)
+    print('cur_vec', cur_vec)
+    return cur_vec
+
+
+def get_job_results(tmp_run_info_list, x_sublist, objectives_sublist_non_traj, trajectory_vector_sublist, x_list, objectives_list, trajectory_vector_list, traj_dist_metric='average'):
+    x_list.extend(x_sublist)
+    trajectory_vector_list.extend(trajectory_vector_sublist)
+    objectives_list_no_traj = objectives_list + objectives_sublist_non_traj
+
+    error_inds = [is_bug(obj) for ind, obj in enumerate(objectives_list_no_traj)]
+    print('len(error_inds)', len(error_inds))
+
+    if len(error_inds) > 0:
+        trajectory_vector_error_proxy_np = trajectory_vector_np[error_inds]
+
+        traj_dist_metric = 'average'
+        objectives_list = []
+        trajectory_vector_np = np.array(trajectory_vector_list)
+
+        for i in range(trajectory_vector_np.shape[0]):
+            if traj_dist_metric == ['average']:
+                diff = np.sum(np.abs(trajectory_vector_error_proxy_np - trajectory_vector_np[i]), axis=1)
+                diff_avg = np.mean(diff)
+                trajectory_vector_d = diff_avg
+
+            if i not in error_inds:
+                trajectory_vector_d = 0
+
+            objectives_list_no_traj[i][3] = trajectory_vector_d
+            objectives_list.append(objectives_list_no_traj[i])
+    else:
+        objectives_list = objectives_list_no_traj
+
+    job_results = objectives_list[-len(tmp_run_info_list):]
+
+
+    return job_results, x_list, objectives_list, trajectory_vector_list
