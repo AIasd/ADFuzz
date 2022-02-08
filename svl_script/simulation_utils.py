@@ -71,7 +71,7 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
         if not agent2:
             agent2_name = 'static'
             agent2_uid = 0
-            agent2_info = [-1]*6
+            agent2_info = [0]*6
         else:
             agent2_name = agent2.name
             agent2_uid = agent2.uid
