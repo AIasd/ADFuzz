@@ -9,9 +9,10 @@ from object_types import pedestrian_types, car_types, large_car_types
 
 
 def get_bug_traj(events_path, npc_events_path):
+    # instance_num might need to be increased based on specific scenarios used
     fields_limit = {
     'type_num': 4,
-    'instance_num': 4,
+    'instance_num': 100,
     'ego_speed': 8,
     'other_speed': 8,
     'collision_ind': 8,
@@ -53,7 +54,10 @@ def get_bug_traj(events_path, npc_events_path):
             type_num = 3
 
         # instance num
-        instance_num = int(agents_uids.index(agent2_uid))
+        if agent2_uid in agents_uids:
+            instance_num = int(agents_uids.index(agent2_uid))+1
+        else:
+            instance_num = 0
 
         # ego speed
         ego_speed = np.linalg.norm([ego_vx, ego_vy, ego_vz])
@@ -197,6 +201,7 @@ def generate_data_summary(original_folder):
     # objectives: objective values for each run
     # objectives_label: label of each objective
     # is_bug: if the run results in a bug
+    print('labels', len(labels_non_zero), labels_non_zero)
     data_summary = {
         'X': X_non_zero,
 
@@ -268,7 +273,7 @@ if __name__ == '__main__':
     # count_bugs(folder, save_folder)
 
     # folder = 'run_results_svl/random/BorregasAve_forward/go_across_junction_ba/apollo_6_with_signal/2022_02_02_11_45_10,50_20_none_1000_coeff_0.0_0.1_0.5_only_unique_1'
-    folder = 'run_results_svl/random/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2022_02_05_23_44_04,50_20_none_1000_coeff_0.0_0.1_0.5_only_unique_0'
+    folder = 'run_results_svl/random/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2022_02_08_16_10_54,50_20_none_1000_coeff_0.0_0.1_0.5_only_unique_0'
     generate_data_summary(folder)
 
     # plot_comparison()
