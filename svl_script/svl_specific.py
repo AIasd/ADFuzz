@@ -12,6 +12,7 @@ from svl_script.object_params import Pedestrian, Vehicle, Static, Waypoint
 from svl_script.simulation_utils import start_simulation
 from svl_script.scene_configs import customized_bounds_and_distributions, customized_routes
 from svl_script.object_types import pedestrian_types, car_types, large_car_types, static_types
+from svl_script.apollo_configs import vehicle_models
 
 def convert_x_to_customized_data(
     x,
@@ -500,24 +501,10 @@ def run_svl_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argum
     ego_car_model = fuzzing_arguments.ego_car_model
 
 
-    # 5.0: 47b529db-0593-4908-b3e7-4b24a32a0f70
-    # 6.0: c354b519-ccf0-4c1c-b3cc-645ed5751bb5
-    # 6.0(modular testing): 2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921
-    # 6.0(no telephoto camera and clock sensor): 4622f73a-250e-4633-9a3d-901ede6b9551
-    # 6.0(no clock sensor): f68151d1-604c-438e-a1a5-aa96d5581f4b
-    # 6.0(with signal sensor): 9272dd1a-793a-45b2-bff4-3a160b506d75
-    # 6.0(modular testing, birdview): b20c0d8a-f310-46b2-a639-6ce6be4f2b14
-    if ego_car_model == 'apollo_6_with_signal':
-        model_id = '9272dd1a-793a-45b2-bff4-3a160b506d75'
-    elif ego_car_model == 'apollo_6_modular':
-        model_id = '2e9095fa-c9b9-4f3f-8d7d-65fa2bb03921'
-    elif ego_car_model == 'apollo_6_modular_2gt':
-        model_id = 'f0daed3e-4b1e-46ce-91ec-21149fa31758'
-    elif ego_car_model == 'apollo_6':
-        model_id = 'c354b519-ccf0-4c1c-b3cc-645ed5751bb5'
-    else:
+    if ego_car_model not in vehicle_models:
         print('ego car model is invalid:', ego_car_model)
         raise
+    model_id = vehicle_models[ego_car_model]['id']
     print('\n'*3, 'ego car model is:', ego_car_model, '\n'*3)
 
     route_info = sim_specific_arguments.route_info
