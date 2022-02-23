@@ -1,11 +1,11 @@
 import sys
 import os
-sys.path.append('..')
+sys.path.append('.')
 import numpy as np
 import pickle
 from customized_utils import make_hierarchical_dir, emptyobject, is_distinct_vectorized
 from matplotlib import pyplot as plt
-from object_types import pedestrian_types, car_types, large_car_types
+from svl_script.object_types import pedestrian_types, car_types, large_car_types
 
 
 def get_bug_traj(events_path, npc_events_path):
@@ -178,8 +178,6 @@ def generate_data_summary(original_folder):
                     mask = np.array(mask)
 
                     non_zero_inds = xu-xl>1e-4
-
-
                     labels_non_zero = labels[non_zero_inds]
                     xl_non_zero = xl[non_zero_inds]
                     xu_non_zero = xu[non_zero_inds]
@@ -265,15 +263,9 @@ def generate_data_summary(original_folder):
 
 
 if __name__ == '__main__':
-    save_folder = ['visualization', 'nsga2-un']
-
+    # save_folder = ['visualization', 'nsga2-un']
     # nsga2-un div
-    folder = 'run_results_svl/nsga2-un/BorregasAve_forward/go_across_junction_ba/apollo_6_with_signal/2022_01_28_09_51_50,20_10_none_200_coeff_0.0_0.1_0.5_only_unique_1/bugs'
-
+    folder = 'svl_script/run_results_svl/nsga2-un/BorregasAve_forward/go_across_junction_ba/apollo_6_with_signal/2022_01_28_09_51_50,20_10_none_200_coeff_0.0_0.1_0.5_only_unique_1/bugs'
     # count_bugs(folder, save_folder)
 
-    # folder = 'run_results_svl/random/BorregasAve_forward/go_across_junction_ba/apollo_6_with_signal/2022_02_02_11_45_10,50_20_none_1000_coeff_0.0_0.1_0.5_only_unique_1'
-    folder = 'run_results_svl/random/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2022_02_08_16_10_54,50_20_none_1000_coeff_0.0_0.1_0.5_only_unique_0'
     generate_data_summary(folder)
-
-    # plot_comparison()
