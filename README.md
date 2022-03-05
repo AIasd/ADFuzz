@@ -137,13 +137,13 @@ Go to the "files" tab, and download the model weights, named "epoch=24.ckpt". Mo
 ### Run Fuzzing
 ```
 # GA-UN
-python ga_fuzzing.py -p 2015 --n_gen 2 --pop_size 2 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5
+python ga_fuzzing.py -p 2015 --n_gen 2 --pop_size 2 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 4 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --record_every_n_step 5 --debug 0
 
 # GA-UN-NN-GRAD
-python ga_fuzzing.py -p 2021 --n_gen 15 --pop_size 50 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --rank_mode adv_nn --warm_up_path <path-to-warm-up-run-folder> --warm_up_len 500 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 1
+python ga_fuzzing.py -p 2021 --n_gen 15 --pop_size 50 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name nsga2-un --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --rank_mode adv_nn --warm_up_path <path-to-warm-up-run-folder> --warm_up_len 500 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 1 --record_every_n_step 5 --debug 0
 
 # AVFuzzer
-python ga_fuzzing.py -p 2018 --n_gen 200 --pop_size 4 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 0 --n_offsprings 50
+python ga_fuzzing.py -p 2018 --n_gen 200 --pop_size 4 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 0 --n_offsprings 50 --record_every_n_step 5 --debug 0
 ```
 
 
