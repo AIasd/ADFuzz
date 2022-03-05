@@ -239,7 +239,7 @@ class StatisticsManager(object):
                         if route_length_kms == 0:
                             global_record.infractions[key] += 0
 
-                if route_record.status is not 'Completed':
+                if route_record.status != 'Completed':
                     global_record.status = 'Failed'
                     if 'exceptions' not in global_record.meta:
                         global_record.meta['exceptions'] = []

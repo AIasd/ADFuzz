@@ -122,16 +122,16 @@ move `AdditionalMaps_0.9.9.4.tar.gz` to `carla_0994_no_rss/Import/` and in the f
 ```
 ./ImportAssets.sh
 ```
-Then, run
+<!-- Then, run
 ```
 cd carla_0994_no_rss/PythonAPI/carla/dist
 easy_install carla-0.9.9-py3.7-linux-x86_64.egg
-```
+``` -->
 
 #### Download a LBC pretrained model
 LBC model is one of the models supported to be tested. A pretrained-model's checkpoint can be found [here](https://app.wandb.ai/bradyz/2020_carla_challenge_lbc/runs/command_coefficient=0.01_sample_by=even_stage2/files)
 
-Go to the "files" tab, and download the model weights, named "epoch=24.ckpt". Move this model's checkpoint to the `models` folder (May need to create `models` folder under this repo's folder).
+Go to the "files" tab, and download the model weights, named "epoch=24.ckpt". Move this model's checkpoint to the `models` folder (May need to create a folder named `models` under the folder `carla_lbc`).
 
 
 ### Run Fuzzing
