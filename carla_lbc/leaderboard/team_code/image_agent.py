@@ -348,18 +348,18 @@ class ImageAgent(BaseAgent):
         points, (target_cam, _) = self.net.forward(img, target)
         points_cam = points.clone().cpu()
 
-        if self.step  == 0:
-            print('\n'*5)
-            print('step :', self.step)
+        # if self.step  == 0:
+        #     print('\n'*5)
+        #     print('step :', self.step)
             # print('radar')
             # print(radar_data.shape)
             # print(radar_data)
             # print(np.max(radar_data, axis=0))
-            print('image', np.sum(tick_data['image']))
+            # print('image', np.sum(tick_data['image']))
             # print('img', torch.sum(img))
             # print('target', target)
             # print('points', points)
-            print('\n'*5)
+            # print('\n'*5)
 
         points_cam[..., 0] = (points_cam[..., 0] + 1) / 2 * img.shape[-1]
         points_cam[..., 1] = (points_cam[..., 1] + 1) / 2 * img.shape[-2]

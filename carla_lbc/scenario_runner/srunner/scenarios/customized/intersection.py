@@ -132,14 +132,14 @@ class Intersection(BasicScenario):
             g_y = generated_transform.location.y
             g_yaw = generated_transform.rotation.yaw
             for i in range(self._number_of_attempts):
-                for j in range(2):
+                for j in range(10):
                     try:
-                        added_dist = i*0.5
+                        added_dist = i*0.25
                         cur_x = g_x + np.random.uniform(0, added_dist)
                         cur_y = g_y + np.random.uniform(0, added_dist)
                         cur_t = create_transform(cur_x, cur_y, 0, 0, g_yaw, 0)
-                        generated_transform.location.y += np.random.uniform(0, 1)
-                        bound_xy(generated_transform, bounds)
+                        # generated_transform.location.y += np.random.uniform(0, 1)
+                        # bound_xy(generated_transform, bounds)
                         actor_object = CarlaDataProvider.request_new_actor(
                             model=actor_model, spawn_point=cur_t, color=color, actor_category=actor_category)
                         is_success = True
@@ -154,7 +154,7 @@ class Intersection(BasicScenario):
 
             for i in range(self._number_of_attempts):
                 try:
-                    added_dist = i*0.5
+                    added_dist = i*0.25
                     waypoint = self._wmap.get_waypoint(waypoint_transform.location, project_to_road=True, lane_type=carla.LaneType.Any)
                     generated_transform = get_generated_transform(added_dist, waypoint)
                     # if actor_category == 'vehicle' and is_waypoint_follower:
@@ -179,9 +179,9 @@ class Intersection(BasicScenario):
 
 
         if status != 'success' and is_success:
-            print('{} {} {} ({:.2f},{:.2f},{:.2f})->({:.2f},{:.2f},{:.2f})'.format(status, actor_model, is_waypoint_follower, waypoint_transform.location.x, waypoint_transform.location.y, waypoint_transform.rotation.yaw, generated_transform.location.x, generated_transform.location.y, waypoint_transform.rotation.yaw))
+            print('\n', '{} {} {} ({:.2f},{:.2f},{:.2f})->({:.2f},{:.2f},{:.2f})'.format(status, actor_model, is_waypoint_follower, waypoint_transform.location.x, waypoint_transform.location.y, waypoint_transform.rotation.yaw, generated_transform.location.x, generated_transform.location.y, waypoint_transform.rotation.yaw), '\n')
         else:
-            print(status, actor_category, actor_model, is_waypoint_follower)
+            print('\n', status, actor_model, is_waypoint_follower, waypoint_transform, '\n')
 
         return actor_object, generated_transform
 
@@ -218,7 +218,7 @@ class Intersection(BasicScenario):
                     center_transform.rotation.roll = 0
 
                     spawn_transform_i = add_transform(center_transform, object_i.spawn_transform)
-                    # print(object_type, i, object_i.model, 'add center', object_i.spawn_transform, '->', spawn_transform_i)
+                    print(object_type, i, object_i.model, 'add center', object_i.spawn_transform, '->', spawn_transform_i)
                 else:
                     spawn_transform_i = object_i.spawn_transform
                     center_transform = None

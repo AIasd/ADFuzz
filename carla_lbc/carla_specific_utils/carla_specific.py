@@ -15,16 +15,15 @@ from leaderboard.utils.statistics_manager import StatisticsManager
 from customized_utils import arguments_info, make_hierarchical_dir, emptyobject, is_distinct_vectorized
 
 
-from scene_configs import customized_bounds_and_distributions, customized_routes
-from setup_labels_and_bounds import generate_fuzzing_content
+from carla_specific_utils.scene_configs import customized_bounds_and_distributions, customized_routes
 from carla_specific_utils.object_params import Static, Pedestrian, Vehicle
 
 
-from setup_labels_and_bounds import static_general_labels, pedestrian_general_labels, vehicle_general_labels, waypoint_labels, waypoints_num_limit
+from carla_specific_utils.setup_labels_and_bounds import generate_fuzzing_content, static_general_labels, pedestrian_general_labels, vehicle_general_labels, waypoint_labels, waypoints_num_limit
 
-from carla_specific_tools import perturb_route, add_transform, create_transform, copy_transform, estimate_objectives
+from carla_specific_utils.carla_specific_tools import perturb_route, add_transform, create_transform, copy_transform, estimate_objectives
 
-from object_types import static_types, pedestrian_types, vehicle_types, vehicle_colors, car_types, motorcycle_types, cyclist_types
+from carla_specific_utils.object_types import static_types, pedestrian_types, vehicle_types, vehicle_colors, car_types, motorcycle_types, cyclist_types
 
 import carla
 
@@ -644,7 +643,7 @@ def run_carla_simulation_helper(customized_data, launch_server, episode_max_time
             pickle.dump(run_info, f_out)
 
         try:
-            print('tmp_save_path, cur_folder', tmp_save_path, cur_folder)
+            # print('tmp_save_path, cur_folder', tmp_save_path, cur_folder)
             copy_tree(tmp_save_path, cur_folder)
         except:
             print('fail to copy from', tmp_save_path)

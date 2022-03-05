@@ -21,7 +21,7 @@ sys.path.append(carla_root+'/PythonAPI/carla')
 sys.path.append(carla_root+'/PythonAPI')
 
 from customized_utils import exit_handler
-from carla_specific_utils.carla_specific_tools import start_server
+from carla_lbc.carla_specific_utils.carla_specific_tools import start_server
 
 # ==============================================================================
 # -- imports -------------------------------------------------------------------

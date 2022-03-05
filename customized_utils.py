@@ -48,109 +48,6 @@ class arguments_info:
         self.changing_weather = False
         self.record_every_n_step = 2000
 
-def specify_args():
-    # general parameters
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--host", default="localhost", help="IP of the host server (default: localhost)"
-    )
-    parser.add_argument(
-        "--port", default="2000", help="TCP port to listen to (default: 2000)"
-    )
-    parser.add_argument(
-        "--sync", action="store_true", help="Forces the simulation to run synchronously"
-    )
-    parser.add_argument("--debug", type=int, help="Run with debug output", default=0)
-    parser.add_argument(
-        "--spectator", type=bool, help="Switch spectator view on?", default=True
-    )
-    parser.add_argument(
-        "--record",
-        type=str,
-        default="",
-        help="Use CARLA recording feature to create a recording of the scenario",
-    )
-    # modification: 30->40
-    parser.add_argument(
-        "--timeout",
-        default="30.0",
-        help="Set the CARLA client timeout value in seconds",
-    )
-
-    # simulation setup
-    parser.add_argument(
-        "--challenge-mode", action="store_true", help="Switch to challenge mode?"
-    )
-    parser.add_argument(
-        "--routes",
-        help="Name of the route to be executed. Point to the route_xml_file to be executed.",
-        required=False,
-    )
-    parser.add_argument(
-        "--scenarios",
-        help="Name of the scenario annotation file to be mixed with the route.",
-        required=False,
-    )
-    parser.add_argument(
-        "--repetitions", type=int, default=1, help="Number of repetitions per route."
-    )
-
-    # agent-related options
-    parser.add_argument(
-        "-a",
-        "--agent",
-        type=str,
-        help="Path to Agent's py file to evaluate",
-        required=False,
-    )
-    parser.add_argument(
-        "--agent-config",
-        type=str,
-        help="Path to Agent's configuration file",
-        default="",
-    )
-
-    parser.add_argument(
-        "--track", type=str, default="SENSORS", help="Participation track: SENSORS, MAP"
-    )
-    parser.add_argument(
-        "--resume",
-        type=bool,
-        default=False,
-        help="Resume execution from last checkpoint?",
-    )
-    parser.add_argument(
-        "--checkpoint",
-        type=str,
-        default="./simulation_results.json",
-        help="Path to checkpoint used for saving statistics and resuming",
-    )
-
-    # addition
-    parser.add_argument(
-        "--weather-index", type=int, default=0, help="see WEATHER for reference"
-    )
-    parser.add_argument(
-        "--save-folder",
-        type=str,
-        default="collected_data",
-        help="Path to save simulation data",
-    )
-    parser.add_argument(
-        "--deviations-folder",
-        type=str,
-        default="",
-        help="Path to the folder that saves deviations data",
-    )
-    parser.add_argument("--save_action_based_measurements", type=int, default=0)
-    parser.add_argument("--changing_weather", type=int, default=0)
-
-    parser.add_argument('--record_every_n_step', type=int, default=2000)
-
-    arguments = parser.parse_args()
-
-    return arguments
-
 def parse_fuzzing_arguments():
     # the default is for carla+lbc stack
     default_objective_weights = np.array([-1., 1., 1., 0., 0., 0., 0., 0., 0., 0.])
@@ -167,8 +64,8 @@ def parse_fuzzing_arguments():
     parser.add_argument('-a','--algorithm_name', type=str, default='nsga2')
 
     parser.add_argument('-p','--ports', nargs='+', type=int, default=[2003], help='TCP port(s) to listen to (default: 2003)')
-    parser.add_argument("-s", "--scheduler_port", type=int, default=8785)
-    parser.add_argument("-d", "--dashboard_address", type=int, default=8786)
+    # parser.add_argument("-s", "--scheduler_port", type=int, default=8785)
+    # parser.add_argument("-d", "--dashboard_address", type=int, default=8786)
 
     parser.add_argument('--simulator', type=str, default='carla')
 
@@ -215,6 +112,10 @@ def parse_fuzzing_arguments():
     parser.add_argument("--standardize_objective", type=int, default=1)
     parser.add_argument("--normalize_objective", type=int, default=1)
     parser.add_argument('--traj_dist_metric', type=str, default='nearest')
+
+    # used only when algorithm_name == 'grid'
+    parser.add_argument('--grid_dict_name', type=str, default='grid_dict_one_ped_town07')
+    parser.add_argument('--grid_start_index', type=int, default=0)
 
 
 

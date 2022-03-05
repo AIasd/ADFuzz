@@ -53,16 +53,18 @@ customized_bounds_and_distributions = {
             "num_of_vehicles_min": 0,
             "num_of_vehicles_max": 0,
 
-            "pedestrian_x_min_0": -10,
-            "pedestrian_x_max_0": 10,
-            "pedestrian_y_min_0": -10,
-            "pedestrian_y_max_0": 10,
-            "pedestrian_speed_min_0": 1,
-            "pedestrian_speed_max_0": 5,
-            "pedestrian_trigger_distance_min_0": 10,
-            "pedestrian_trigger_distance_max_0": 10,
-            "pedestrian_dist_to_travel_min_0": 20,
-            "pedestrian_dist_to_travel_max_0": 20,
+            "pedestrian_x_min_0": -12,
+            "pedestrian_x_max_0": 12,
+            "pedestrian_y_min_0": -12,
+            "pedestrian_y_max_0": 12,
+            "pedestrian_yaw_min_0": 360,
+            "pedestrian_yaw_max_0": 360,
+            "pedestrian_speed_min_0": 3,
+            "pedestrian_speed_max_0": 3,
+            "pedestrian_trigger_distance_min_0": 20,
+            "pedestrian_trigger_distance_max_0": 20,
+            "pedestrian_dist_to_travel_min_0": 50,
+            "pedestrian_dist_to_travel_max_0": 50,
             "num_of_pedestrian_types_min_0": 0,
             "num_of_pedestrian_types_max_0": 0,
 
@@ -75,11 +77,52 @@ customized_bounds_and_distributions = {
         },
         "customized_parameters_distributions": {},
         "customized_center_transforms": {
-        "pedestrian_center_transform_0": ("waypoint_ratio", 50),
-        # "vehicle_center_transform_0": ("waypoint_ratio", 50)
+        # "pedestrian_center_transform_0": ("waypoint_ratio", 50),
+        # 'pedestrian_center_transform_0': ('absolute_location', -151, -37.5),
+        'pedestrian_center_transform_0': ('absolute_location', -150.4, -35.6),
         },
         "customized_constraints": [],
     },
+    "go_straight_town05_one_ped": {
+        "customized_parameters_bounds": {
+            "friction_min": 0.9,
+            "friction_max": 0.9,
+
+            "num_of_weathers_min": 0,
+            "num_of_weathers_max": 0,
+
+            "num_of_static_min": 0,
+            "num_of_static_max": 0,
+            "num_of_pedestrians_min": 1,
+            "num_of_pedestrians_max": 1,
+            "num_of_vehicles_min": 0,
+            "num_of_vehicles_max": 0,
+
+            "pedestrian_x_min_0": -12,
+            "pedestrian_x_max_0": 12,
+            "pedestrian_y_min_0": -12,
+            "pedestrian_y_max_0": 12,
+            "pedestrian_yaw_min_0": 0,
+            "pedestrian_yaw_max_0": 360,
+            "pedestrian_speed_min_0": 3,
+            "pedestrian_speed_max_0": 3,
+            "pedestrian_trigger_distance_min_0": 20,
+            "pedestrian_trigger_distance_max_0": 20,
+            "pedestrian_dist_to_travel_min_0": 50,
+            "pedestrian_dist_to_travel_max_0": 50,
+            "num_of_pedestrian_types_min_0": 0,
+            "num_of_pedestrian_types_max_0": 0,
+        },
+        "customized_parameters_distributions": {},
+        "customized_center_transforms": {
+        # "pedestrian_center_transform_0": ("waypoint_ratio", 50),
+        'pedestrian_center_transform_0': ('absolute_location', -116.5, 12),
+        },
+        "customized_constraints": [],
+
+        # start:(-120, 30), end:(-103, 4)
+    },
+
     "turn_left_town07_one_ped_and_one_vehicle": {
         "customized_parameters_bounds": {
             "friction_min": 0.9,

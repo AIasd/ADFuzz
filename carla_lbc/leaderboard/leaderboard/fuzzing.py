@@ -69,7 +69,6 @@ from leaderboard.utils.route_parser import RouteParser
 
 
 from customized_utils import (
-    specify_args,
     is_port_in_use,
     make_hierarchical_dir,
     port_to_gpu,

@@ -2,7 +2,7 @@
 CARLA Labels API
 '''
 from collections import OrderedDict
-from object_types import (
+from carla_specific_utils.object_types import (
     WEATHERS,
     weather_names,
     pedestrian_types,

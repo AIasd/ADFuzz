@@ -196,14 +196,14 @@ class RouteScenario(BasicScenario):
         self._update_route(world, config, debug_mode>0)
 
         ego_vehicle = self._update_ego_vehicle()
-        print('self.sampled_scenarios_definitions', self.sampled_scenarios_definitions)
+        # print('self.sampled_scenarios_definitions', self.sampled_scenarios_definitions)
         self.list_scenarios = self._build_scenario_instances(world,
                                                              ego_vehicle,
                                                              self.sampled_scenarios_definitions,
                                                              scenarios_per_tick=5,
                                                              timeout=self.timeout,
                                                              debug_mode=debug_mode)
-        print('\n'*10, 'self.list_scenarios', self.list_scenarios, '\n'*10)
+        # print('\n'*10, 'self.list_scenarios', self.list_scenarios, '\n'*10)
         super(RouteScenario, self).__init__(name=config.name,
                                             ego_vehicles=[ego_vehicle],
                                             config=config,
@@ -251,8 +251,8 @@ class RouteScenario(BasicScenario):
 
 
         potential_scenarios_definitions, _ = RouteParser.scan_route_for_scenarios(config.town, route, world_annotations)
-        print('\n potential_scenarios_definitions[0] :', len(potential_scenarios_definitions[0]), '\n')
-        print('\n potential_scenarios_definitions.keys() :', len(potential_scenarios_definitions.keys()), '\n')
+        # print('\n potential_scenarios_definitions[0] :', len(potential_scenarios_definitions[0]), '\n')
+        # print('\n potential_scenarios_definitions.keys() :', len(potential_scenarios_definitions.keys()), '\n')
 
         CarlaDataProvider.set_ego_vehicle_route(convert_transform_to_location(self.route))
 
@@ -441,7 +441,7 @@ class RouteScenario(BasicScenario):
                 continue
 
             scenario_instance_vec.append(scenario_instance)
-        print('\n'*3, 'len(scenario_instance_vec)', len(scenario_instance_vec), '\n'*3)
+        # print('\n'*3, 'len(scenario_instance_vec)', len(scenario_instance_vec), '\n'*3)
         return scenario_instance_vec
 
     def _get_actors_instances(self, list_of_antagonist_actors):

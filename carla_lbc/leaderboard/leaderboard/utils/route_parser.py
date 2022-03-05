@@ -325,7 +325,7 @@ class RouteParser(object):
                         }
 
                         trigger_id = RouteParser.check_trigger_position(waypoint, existent_triggers)
-                        print('waypoint', waypoint, 'existent_triggers', existent_triggers, 'trigger_id', trigger_id)
+                        # print('waypoint', waypoint, 'existent_triggers', existent_triggers, 'trigger_id', trigger_id)
                         if trigger_id is None:
                             # This trigger does not exist create a new reference on existent triggers
                             existent_triggers.update({latest_trigger_id: waypoint})

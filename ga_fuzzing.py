@@ -8,6 +8,10 @@ sys.path.append('fuzzing_utils')
 
 fuzzing_arguments = parse_fuzzing_arguments()
 
+if not fuzzing_arguments.debug:
+    import warnings
+    warnings.filterwarnings("ignore")
+
 if fuzzing_arguments.simulator in ['carla', 'svl']:
     sys.path.append('..')
     carla_lbc_root = 'carla_lbc'
@@ -101,6 +105,7 @@ from customized_utils import rand_real,  make_hierarchical_dir, exit_handler, is
 
 
 
+
 # eliminate some randomness
 set_general_seed(seed=fuzzing_arguments.random_seed)
 # random_seeds = [0, 10, 20]
@@ -151,8 +156,8 @@ class MyProblem(Problem):
 
 
         self.ego_car_model = fuzzing_arguments.ego_car_model
-        self.scheduler_port = fuzzing_arguments.scheduler_port
-        self.dashboard_address = fuzzing_arguments.dashboard_address
+        #self.scheduler_port = fuzzing_arguments.scheduler_port
+        #self.dashboard_address = fuzzing_arguments.dashboard_address
         self.ports = fuzzing_arguments.ports
         self.episode_max_time = fuzzing_arguments.episode_max_time
         self.objective_weights = fuzzing_arguments.objective_weights
@@ -374,6 +379,75 @@ class MyProblem(Problem):
 
 
 
+class GridSampling(Sampling):
+    def __init__(self, grid_start_index, grid_dict):
+        self.grid_start_index = grid_start_index
+
+        import itertools
+        gird_value_list = list(itertools.product(*list(grid_dict.values())))
+        print('total combinations:', len(gird_value_list))
+        gird_value_list = list(zip(*gird_value_list))
+        self.grid_value_dict = {k:gird_value_list[i] for i, k in enumerate(grid_dict.keys())}
+
+
+    def _do(self, problem, n_samples, **kwargs):
+        xl = problem.xl
+        xu = problem.xu
+        mask = np.array(problem.mask)
+        labels = problem.labels
+        parameters_distributions = problem.parameters_distributions
+        print('\n', 'self.grid_start_index:', self.grid_start_index, '\n')
+        def subroutine(X):
+            def sample_one_feature(typ, lower, upper, dist, label, size=1):
+                assert lower <= upper, label+','+str(lower)+'>'+str(upper)
+                if typ == 'int':
+                    val = rng.integers(lower, upper+1, size=size)
+                elif typ == 'real':
+                    if dist[0] == 'normal':
+                        if dist[1] == None:
+                            mean = (lower+upper)/2
+                        else:
+                            mean = dist[1]
+                        val = rng.normal(mean, dist[2], size=size)
+                    else: # default is uniform
+                        val = rng.random(size=size) * (upper - lower) + lower
+                    val = np.clip(val, lower, upper)
+                return val
+            n_samples_sampling = n_samples
+            while len(X) < n_samples:
+                cur_X = []
+                for i, dist in enumerate(parameters_distributions):
+                    typ = mask[i]
+                    lower = xl[i]
+                    upper = xu[i]
+                    label = labels[i]
+                    if label in self.grid_value_dict:
+                        val = self.grid_value_dict[label][self.grid_start_index:self.grid_start_index+n_samples_sampling]
+                    else:
+                        val = sample_one_feature(typ, lower, upper, dist, label, size=n_samples_sampling)
+                    cur_X.append(val)
+                cur_X = np.swapaxes(np.stack(cur_X),0,1)
+
+                remaining_inds = if_violate_constraints_vectorized(cur_X, problem.customized_constraints, problem.labels, problem.ego_start_position, verbose=False)
+                if len(remaining_inds) == 0:
+                    continue
+
+                cur_X = cur_X[remaining_inds]
+                X.extend(cur_X)
+
+                self.grid_start_index += n_samples
+                n_samples_sampling = n_samples - len(X)
+
+            return X
+        X = []
+        X = subroutine(X)
+
+        if len(X) > 0:
+            X = np.stack(X)
+        else:
+            X = np.array([])
+
+        return X
 
 
 class MySamplingVectorized(Sampling):
@@ -845,7 +919,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
                 self.cur_gen += 1
 
 
-        elif self.algorithm_name == 'random':
+        elif self.algorithm_name in ['random', 'grid']:
             self.tmp_off = self.plain_initialization.do(self.problem, self.n_offsprings, algorithm=self)
         else:
             if self.algorithm_name == 'random-un':
@@ -1124,7 +1198,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
             self.evaluator.eval(self.problem, self.off, algorithm=self)
 
 
-        if self.algorithm_name in ['random', 'avfuzzer']:
+        if self.algorithm_name in ['random', 'avfuzzer', 'grid']:
             self.pop = self.off
         elif self.emcmc:
             new_pop = do_emcmc(parents, self.off, self.n_gen, self.problem.objective_weights, self.problem.fuzzing_arguments.default_objectives)
@@ -1416,10 +1490,17 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
                     eliminate_duplicates=eliminate_duplicates)
 
 
-
     sampling = MySamplingVectorized(use_unique_bugs=fuzzing_arguments.use_unique_bugs, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
 
-    plain_sampling = MySamplingVectorized(use_unique_bugs=False, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
+    # For grid search
+    if fuzzing_arguments.algorithm_name == 'grid':
+        from carla_specific_utils.grid import grid_dict_dict
+        assert fuzzing_arguments.grid_dict_name
+        grid_start_index = fuzzing_arguments.grid_start_index
+        grid_dict = grid_dict_dict[fuzzing_arguments.grid_dict_name]
+        plain_sampling = GridSampling(grid_start_index, grid_dict)
+    else:
+        plain_sampling = MySamplingVectorized(use_unique_bugs=False, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
 
     algorithm = NSGA2_CUSTOMIZED(dt=dt_arguments.dt, X=dt_arguments.X, F=dt_arguments.F, fuzzing_arguments=fuzzing_arguments, plain_sampling=plain_sampling, local_mating=local_mating, sampling=sampling,
     crossover=crossover,
@@ -1551,6 +1632,9 @@ if __name__ == '__main__':
         sim_specific_arguments = initialize_carla_specific(fuzzing_arguments)
         run_simulation = run_carla_simulation
 
+
+
+
     elif fuzzing_arguments.simulator == 'svl':
         from svl_script.scene_configs import customized_bounds_and_distributions
         from svl_script.setup_labels_and_bounds import generate_fuzzing_content
@@ -1560,7 +1644,7 @@ if __name__ == '__main__':
 
         assert fuzzing_arguments.ego_car_model in ['apollo_6_with_signal', 'apollo_6_modular', 'apollo_6_modular_2gt', 'apollo_6']
         assert fuzzing_arguments.route_type in ['BorregasAve_forward', 'BorregasAve_left', 'SanFrancisco_forward']
-        assert fuzzing_arguments.scenario_type in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing', 'go_across_junction_sf', 'go_across_junction_ba']
+        assert fuzzing_arguments.scenario_type in ['default', 'turn_left_one_ped_and_one_vehicle', 'one_ped_crossing', 'go_across_junction_sf', 'go_across_junction_ba', 'one_angle_ped_crossing']
 
         assert len(fuzzing_arguments.objective_weights) == 10
         # The later fields are ignored for now

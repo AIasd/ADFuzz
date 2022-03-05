@@ -9,7 +9,6 @@ sys.path.append('.')
 sys.path.append('leaderboard')
 sys.path.append('leaderboard/team_code')
 sys.path.append('scenario_runner')
-sys.path.append('scenario_runner')
 sys.path.append('carla_project')
 sys.path.append('carla_project/src')
 
@@ -202,20 +201,6 @@ def list_bug_categories_with_numbers(folder_path):
 
 
 
-# list pickled data
-def analyze_data(pickle_path):
-    with open(pickle_path, 'rb') as f_out:
-        d = pickle.load(f_out)
-        X = d['X']
-        y = d['y']
-        F = d['F']
-        objectives = d['objectives']
-        print(np.sum(X[10,:]-X[11,:]))
-        filter_critical_regions(X, y)
-        # TBD: tree diversity
-
-
-
 def unique_bug_num(all_X, all_y, mask, xl, xu, cutoff):
     if cutoff == 0:
         return 0, []
@@ -270,28 +255,6 @@ def apply_tsne(path, n_gen, pop_size):
     ax.yaxis.set_major_formatter(NullFormatter())
     plt.axis('tight')
     plt.legend(handles=scatter_bug.legend_elements()[0], labels=['normal', 'bugs'])
-
-
-    # fig = plt.figure(figsize=(18, 9))
-    #
-    # plt.suptitle("tSNE of sampled/generated data points", fontsize=14)
-    #
-    #
-    # ax = fig.add_subplot(121)
-    # scatter_bug = plt.scatter(X_embedded[:, 0], X_embedded[:, 1], s=5, c=y, cmap=plt.cm.rainbow)
-    # plt.title("bugs VS normal")
-    # ax.xaxis.set_major_formatter(NullFormatter())
-    # ax.yaxis.set_major_formatter(NullFormatter())
-    # plt.axis('tight')
-    # plt.legend(handles=scatter_bug.legend_elements()[0], labels=['normal', 'bugs'])
-    #
-    # ax = fig.add_subplot(122)
-    # scatter_gen = plt.scatter(X_embedded[:, 0], X_embedded[:, 1], s=5, c=generations, cmap=plt.cm.rainbow)
-    # plt.title("different generations")
-    # ax.xaxis.set_major_formatter(NullFormatter())
-    # ax.yaxis.set_major_formatter(NullFormatter())
-    # plt.axis('tight')
-    # plt.legend(handles=scatter_gen.legend_elements()[0], labels=[str(i) for i in range(n_gen)])
 
     plt.savefig('tsne')
 
@@ -357,9 +320,6 @@ def unique_bug_num_seq_partial_objectives(path_list):
 
 
 def analyze_objectives(path_list, filename='objectives_bug_num_over_simulations', scene_name=''):
-
-
-
 
     cutoffs = [100*i for i in range(0, 8)]
     data_list = []
