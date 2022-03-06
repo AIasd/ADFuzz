@@ -57,7 +57,7 @@ customized_bounds_and_distributions = {
             "pedestrian_x_max_0": 12,
             "pedestrian_y_min_0": -12,
             "pedestrian_y_max_0": 12,
-            "pedestrian_yaw_min_0": 360,
+            "pedestrian_yaw_min_0": 0,
             "pedestrian_yaw_max_0": 360,
             "pedestrian_speed_min_0": 3,
             "pedestrian_speed_max_0": 3,
@@ -78,10 +78,10 @@ customized_bounds_and_distributions = {
         "customized_parameters_distributions": {},
         "customized_center_transforms": {
         # "pedestrian_center_transform_0": ("waypoint_ratio", 50),
-        # 'pedestrian_center_transform_0': ('absolute_location', -151, -37.5),
         'pedestrian_center_transform_0': ('absolute_location', -150.4, -35.6),
         },
         "customized_constraints": [],
+        # start: (-151, -60), end: (-151, -15)
     },
     "go_straight_town05_one_ped": {
         "customized_parameters_bounds": {
@@ -119,7 +119,6 @@ customized_bounds_and_distributions = {
         'pedestrian_center_transform_0': ('absolute_location', -116.5, 12),
         },
         "customized_constraints": [],
-
         # start:(-120, 30), end:(-103, 4)
     },
 
