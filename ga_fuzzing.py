@@ -1679,7 +1679,7 @@ if __name__ == '__main__':
 
         fuzzing_arguments.sample_avoid_ego_position = 1
 
-        assert fuzzing_arguments.route_type in ['Town04_Opt_left_highway', 'Town06_Opt_forward']
+        assert fuzzing_arguments.route_type in ['Town04_Opt_left_highway', 'Town06_Opt_forward', 'Town04_Opt_forward_highway']
         # hack
         fuzzing_arguments.scenario_type = fuzzing_arguments.route_type
         fuzzing_arguments.root_folder = 'run_results_op'
