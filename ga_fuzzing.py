@@ -270,23 +270,29 @@ class MyProblem(Problem):
             port = self.ports[0]
             x = X[cur_i]
 
-            manager = Manager()
-            return_dict = manager.dict()
-            try:
-                p = Process(target=fun, args=(self, x, launch_server, self.counter, port, return_dict))
-                p.start()
-                p.join(240)
-                if p.is_alive():
-                    print("Function is hanging!")
-                    p.terminate()
-                    print("Kidding, just terminated!")
-                if 'returned_data' in return_dict:
-                    objectives, run_info, has_run = return_dict['returned_data']
-                else:
-                    raise
-            except:
-                traceback.print_exc()
-                objectives, run_info, has_run = default_objectives, None, 0
+            # No need to use subprocess when no simulation is running
+            if self.fuzzing_arguments.simulator == 'no_simulation':
+                return_dict = {}
+                fun(self, x, launch_server, self.counter, port, return_dict)
+            else:
+                manager = Manager()
+                return_dict = manager.dict()
+                try:
+                    p = Process(target=fun, args=(self, x, launch_server, self.counter, port, return_dict))
+                    p.start()
+                    p.join(240)
+                    if p.is_alive():
+                        print("Function is hanging!")
+                        p.terminate()
+                        print("Kidding, just terminated!")
+                except:
+                    traceback.print_exc()
+                    objectives, run_info, has_run = default_objectives, None, 0
+
+            if 'returned_data' in return_dict:
+                objectives, run_info, has_run = return_dict['returned_data']
+            else:
+                raise
 
             print('get job result for', total_i)
             if run_info and 'all_final_generated_transforms' in run_info:
@@ -422,6 +428,7 @@ class GridSampling(Sampling):
                     upper = xu[i]
                     label = labels[i]
                     if label in self.grid_value_dict:
+                        assert self.grid_start_index+n_samples_sampling <= len(self.grid_value_dict[label]), str(self.grid_start_index+n_samples_sampling)+'>'+str(len(self.grid_value_dict[label]))
                         val = self.grid_value_dict[label][self.grid_start_index:self.grid_start_index+n_samples_sampling]
                     else:
                         val = sample_one_feature(typ, lower, upper, dist, label, size=n_samples_sampling)
@@ -1289,6 +1296,8 @@ class NSGA2_CUSTOMIZED(NSGA2):
             self.evaluator.eval(self.problem, pop, algorithm=self)
         print('\n'*5, 'after initialize evaluator', '\n'*5)
         print('len(self.all_pop_run_X)', len(self.all_pop_run_X))
+        print('len(self.problem.objectives_list)', len(self.problem.objectives_list))
+        self.all_pop_run_X = pop.get("X")
 
 
         # that call is a dummy survival to set attributes that are necessary for the mating selection
@@ -1701,8 +1710,15 @@ if __name__ == '__main__':
         fuzzing_arguments.objective_weights = np.array([1., 1., 1., -1., 0., 0.])
         fuzzing_arguments.default_objectives = np.array([20., 1, 10, -1, 0, 0])
         fuzzing_arguments.objective_labels = ['min_dist', 'min_angle', 'min_ttc', 'collision_speed', 'collision', 'oob']
+        scenario_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed', 'ped_delay', 'ped_init_speed']
 
-        fuzzing_content = generate_fuzzing_content()
+
+        
+
+
+        scenario_label_types = ['real']*len(scenario_labels)
+
+        fuzzing_content = generate_fuzzing_content(fuzzing_arguments, scenario_labels, scenario_label_types)
         sim_specific_arguments = initialize_no_simulation_specific(fuzzing_arguments)
         run_simulation = run_no_simulation
     else:

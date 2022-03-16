@@ -76,6 +76,8 @@ def parse_fuzzing_arguments():
     parser.add_argument("--has_display", type=str, default='0')
     parser.add_argument("--debug", type=int, default=1, help="whether using the debug mode: planned paths will be visualized.")
     parser.add_argument('--correct_spawn_locations_after_run', type=int, default=0)
+    parser.add_argument("--terminate_on_collision", type=int, default=1, help="whether stopping the simulation when a collision happens.")
+
 
     # carla_op specific
     parser.add_argument('--carla_path', type=str, default="../carla_0911_rss/CarlaUE4.sh")
@@ -478,11 +480,10 @@ def get_F(current_objectives, all_objectives, objective_weights, use_single_obje
 # ---------------- NN -------------------
 # dependent on description labels
 def encode_fields(x, labels, labels_to_encode, keywords_dict):
-
     x = np.array(x).astype(np.float)
-
     encode_fields = []
     inds_to_encode = []
+
     for label in labels_to_encode:
         for k, v in keywords_dict.items():
             if k in label:
@@ -492,6 +493,14 @@ def encode_fields(x, labels, labels_to_encode, keywords_dict):
                 encode_fields.append(v)
                 break
     inds_non_encode = list(set(range(x.shape[1])) - set(inds_to_encode))
+
+    # handle the case when no integer fields exist
+    if len(labels_to_encode) == 0:
+        from sklearn.preprocessing import FunctionTransformer
+        enc = FunctionTransformer()
+        return x, enc, inds_to_encode, inds_non_encode, encode_fields
+
+
 
     enc = OneHotEncoder(handle_unknown="ignore", sparse=False)
 
@@ -570,28 +579,30 @@ def customized_inverse_standardize(X, standardize, m, partial=True, scale_only=F
 def decode_fields(x, enc, inds_to_encode, inds_non_encode, encode_fields, adv=False):
     n = x.shape[0]
     m = len(inds_to_encode) + len(inds_non_encode)
-    embed_dims = np.sum(encode_fields)
+    embed_dims = int(np.sum(encode_fields))
+    if embed_dims > 0:
+        embed = x[:, :embed_dims]
+        kept = x[:, embed_dims:]
 
-    embed = x[:, :embed_dims]
-    kept = x[:, embed_dims:]
+        if adv:
+            one_hot_embed = np.zeros(embed.shape)
+            s = 0
+            for field_len in encode_fields:
+                max_inds = np.argmax(x[:, s : s + field_len], axis=1)
+                one_hot_embed[np.arange(x.shape[0]), s + max_inds] = 1
+                s += field_len
+            embed = one_hot_embed
 
-    if adv:
-        one_hot_embed = np.zeros(embed.shape)
-        s = 0
-        for field_len in encode_fields:
-            max_inds = np.argmax(x[:, s : s + field_len], axis=1)
-            one_hot_embed[np.arange(x.shape[0]), s + max_inds] = 1
-            s += field_len
-        embed = one_hot_embed
+        x_encoded = enc.inverse_transform(embed)
+        # print('encode_fields', encode_fields)
+        # print('embed', embed[0], x_encoded[0])
+        x_decoded = np.zeros([n, m])
+        x_decoded[:, inds_non_encode] = kept
+        x_decoded[:, inds_to_encode] = x_encoded
 
-    x_encoded = enc.inverse_transform(embed)
-    # print('encode_fields', encode_fields)
-    # print('embed', embed[0], x_encoded[0])
-    x_decoded = np.zeros([n, m])
-    x_decoded[:, inds_non_encode] = kept
-    x_decoded[:, inds_to_encode] = x_encoded
-
-    return x_decoded
+        return x_decoded
+    else:
+        return x
 
 def remove_fields_not_changing(x, embed_dims=0, xl=[], xu=[]):
     eps = 1e-8
@@ -613,7 +624,7 @@ def recover_fields_not_changing(x, x_removed, kept_fields, removed_fields):
     m = len(kept_fields) + len(removed_fields)
 
     # this is True usually when adv is used
-    if x_removed.shape[0] != n:
+    if x_removed.shape[0] > 0 and x_removed.shape[0] != n:
         x_removed = np.array([x_removed[0] for _ in range(n)])
     x_recovered = np.zeros([n, m])
     x_recovered[:, kept_fields] = x
@@ -639,7 +650,7 @@ def process_X(
     X, enc, inds_to_encode, inds_non_encode, encoded_fields = encode_fields(
         initial_X, labels, labels_to_encode, keywords_dict
     )
-    one_hot_fields_len = np.sum(encoded_fields)
+    one_hot_fields_len = int(np.sum(encoded_fields))
 
     xl, xu = encode_bounds(
         xl_ori, xu_ori, inds_to_encode, inds_non_encode, encoded_fields
@@ -669,6 +680,7 @@ def process_X(
     xu = xu[kept_fields]
 
     kept_fields_non_encode = kept_fields - one_hot_fields_len
+
     kept_fields_non_encode = kept_fields_non_encode[kept_fields_non_encode >= 0]
     labels_used = labels_non_encode[kept_fields_non_encode]
 
@@ -861,16 +873,16 @@ def if_violate_constraints(x, customized_constraints, labels, verbose=False):
     return if_violate, [violated_constraints, involved_labels]
 
 def encode_bounds(xl, xu, inds_to_encode, inds_non_encode, encode_fields):
-    m1 = np.sum(encode_fields)
-    m2 = len(inds_non_encode)
-    m = m1 + m2
+    m1 = int(np.sum(encode_fields))
+    if m1 > 0:
+        xl_embed, xu_embed = np.zeros(m1), np.ones(m1)
 
-    xl_embed, xu_embed = np.zeros(m1), np.ones(m1)
+        xl_new = np.concatenate([xl_embed, xl[inds_non_encode]])
+        xu_new = np.concatenate([xu_embed, xu[inds_non_encode]])
 
-    xl_new = np.concatenate([xl_embed, xl[inds_non_encode]])
-    xu_new = np.concatenate([xu_embed, xu[inds_non_encode]])
-
-    return xl_new, xu_new
+        return xl_new, xu_new
+    else:
+        return xl, xu
 # ---------------- ADV -------------------
 
 

@@ -1,3 +1,6 @@
+'''
+Functions here need to be updated according to the dataset used. Some functions are only used by certain methods.
+'''
 import numpy as np
 from customized_utils import is_distinct_vectorized
 
@@ -90,14 +93,15 @@ def choose_weight_inds(objective_weights):
 def determine_y_upon_weights(objective_list, objective_weights):
     y = np.zeros(len(objective_list))
     for i, obj in enumerate(objective_list):
-        cond = 0
-        cond |= (obj[-3] > 0.1) & (obj[-2] == 1)
-        cond |= (obj[-1] == 1)
-        y[i] = cond
+        y[i] = check_bug(obj)
     return y
 
 def get_all_y(objective_list, objective_weights):
     y_list = np.zeros((2, len(objective_list)))
+    collision_activated = np.sum(objective_weights[:3] != 0) > 0
+    offroad_activated = (np.abs(objective_weights[3]) > 0) | (
+        np.abs(objective_weights[5]) > 0
+    )
     for i, obj in enumerate(objective_list):
         if collision_activated:
             y_list[0, i] = (obj[-3] > 0.1) & (obj[-2] == 1)

@@ -330,7 +330,7 @@ def pgd_attack(
         device = torch.device(device_name)
 
     n = len(images)
-    encoded_fields_len = np.sum(encoded_fields)
+    encoded_fields_len = int(np.sum(encoded_fields))
 
     images_all = torch.from_numpy(images).to(device).float()
     labels_all = torch.from_numpy(labels).to(device).float()
@@ -368,7 +368,8 @@ def pgd_attack(
         images = torch.unsqueeze(images_all[j], 0)
         labels = labels_all[j]
         ori_images = torch.unsqueeze(ori_images_all[j], 0)
-        ori_images_encode = ori_images[:, :encoded_fields_len]
+        if encoded_fields_len > 0:
+            ori_images_encode = ori_images[:, :encoded_fields_len]
         ori_images_non_encode = ori_images[:, encoded_fields_len:]
 
 
