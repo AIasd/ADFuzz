@@ -1,5 +1,6 @@
 import sys
 import os
+from importlib_metadata import version
 from customized_utils import parse_fuzzing_arguments
 
 
@@ -28,11 +29,13 @@ if fuzzing_arguments.simulator in ['carla', 'svl']:
         sys.path.append(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
         sys.path.append(carla_root+'/PythonAPI/carla')
         sys.path.append(carla_root+'/PythonAPI')
-        assert os.path.exists(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
 
-        egg_path = os.path.join(carla_root, 'PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
-        # os.system('pip uninstall carla')
-        os.system('easy_install '+egg_path)
+        if version('carla') != '0.9.9':
+            assert os.path.exists(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
+
+            egg_path = os.path.join(carla_root, 'PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
+            # os.system('pip uninstall carla')
+            os.system('easy_install '+egg_path)
 
 
 elif fuzzing_arguments.simulator in ['carla_op']:
@@ -48,9 +51,10 @@ elif fuzzing_arguments.simulator in ['carla_op']:
     sys.path.append(os.path.expanduser('~/openpilot'))
     sys.path.append(os.path.expanduser('~/openpilot/tools/sim'))
 
-    egg_path = os.path.join(carla_root, 'PythonAPI/carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg')
-    # os.system('pip uninstall carla')
-    os.system('easy_install '+egg_path)
+    if version('carla') != '0.9.11':
+        egg_path = os.path.join(carla_root, 'PythonAPI/carla/dist/carla-0.9.11-py3.7-linux-x86_64.egg')
+        # os.system('pip uninstall carla')
+        os.system('easy_install '+egg_path)
 
 
 
@@ -1713,7 +1717,7 @@ if __name__ == '__main__':
         scenario_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed', 'ped_delay', 'ped_init_speed']
 
 
-        
+
 
 
         scenario_label_types = ['real']*len(scenario_labels)
