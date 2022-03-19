@@ -296,7 +296,9 @@ class MyProblem(Problem):
             if 'returned_data' in return_dict:
                 objectives, run_info, has_run = return_dict['returned_data']
             else:
-                raise
+                # TBD: add an error log
+                print('\n'*3, 'returned_data is missing', '\n'*3)
+                objectives, run_info, has_run = default_objectives, None, 0
 
             print('get job result for', total_i)
             if run_info and 'all_final_generated_transforms' in run_info:
@@ -1717,7 +1719,7 @@ if __name__ == '__main__':
         scenario_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed', 'ped_delay', 'ped_init_speed']
 
 
-
+        
 
 
         scenario_label_types = ['real']*len(scenario_labels)
