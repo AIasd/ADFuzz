@@ -300,13 +300,14 @@ def set_general_seed(seed=0):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    # torch.set_deterministic(True)
+    # torch.use_deterministic_algorithms(True)
     torch.backends.cudnn.benchmark = False
     # torch.backends.cudnn.deterministic = True
     # torch.backends.cudnn.enabled = False
 
 def rand_real(rng, low, high):
     return rng.random() * (high - low) + low
+
 # ---------------- Misc -------------------
 
 
@@ -461,10 +462,10 @@ def get_F(current_objectives, all_objectives, objective_weights, use_single_obje
     else:
         current_objectives_norm = current_objectives_std
 
-    print('current_objectives')
-    print(current_objectives)
-    print('current_objectives_norm')
-    print(current_objectives_norm)
+    # print('current_objectives')
+    # print(current_objectives)
+    # print('current_objectives_norm')
+    # print(current_objectives_norm)
 
     current_Fs = current_objectives_norm * objective_weights
 
@@ -650,7 +651,7 @@ def process_X(
     X, enc, inds_to_encode, inds_non_encode, encoded_fields = encode_fields(
         initial_X, labels, labels_to_encode, keywords_dict
     )
-    one_hot_fields_len = int(np.sum(encoded_fields))
+    one_hot_fields_len = np.sum(encoded_fields).astype('int')
 
     xl, xu = encode_bounds(
         xl_ori, xu_ori, inds_to_encode, inds_non_encode, encoded_fields
@@ -679,8 +680,7 @@ def process_X(
     xl = xl[kept_fields]
     xu = xu[kept_fields]
 
-    kept_fields_non_encode = kept_fields - one_hot_fields_len
-
+    kept_fields_non_encode = np.array(kept_fields) - one_hot_fields_len
     kept_fields_non_encode = kept_fields_non_encode[kept_fields_non_encode >= 0]
     labels_used = labels_non_encode[kept_fields_non_encode]
 
@@ -1068,7 +1068,12 @@ def select_batch_max_d_greedy(d_list, train_test_cutoff, batch_size):
         # print('remaining_inds after', remaining_inds)
         chosen_inds.append(chosen_ind)
     return chosen_inds
+
+
+
 # ---------------- acquisition related -------------------
+
+
 
 
 def get_job_results(tmp_run_info_list, x_sublist, objectives_sublist_non_traj, trajectory_vector_sublist, x_list, objectives_list, trajectory_vector_list, traj_dist_metric=None):
