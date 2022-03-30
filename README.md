@@ -146,7 +146,11 @@ python ga_fuzzing.py -p 2021 --n_gen 15 --pop_size 50 -r 'town07_front_0' -c 'go
 python ga_fuzzing.py -p 2018 --n_gen 200 --pop_size 4 -r 'town07_front_0' -c 'go_straight_town07' --algorithm_name avfuzzer --has_run_num 700 --objective_weights -1 1 1 0 0 0 0 0 0 0 --check_unique_coeff 0 0.1 0.5 --has_display 0 --record_every_n_step 5 --only_run_unique_cases 0 --n_offsprings 50 --record_every_n_step 5 --debug 0
 ```
 
-
+### Rerun
+By default, all the scenarios in the bugs folder under the parent folder will be rerun and visualized.
+```
+python carla_lbc/rerun_and_data_analysis/rerun_scenario.py --parent_folder path_to_the_parent_folder_to_rerun
+```
 
 ## STACK2: SVL2021.3+Apollo Master
 ### Setup

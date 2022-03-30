@@ -49,7 +49,7 @@ def main(map):
     while(True):
         t = world.get_spectator().get_transform()
         # coordinate_str = "(x,y) = ({},{})".format(t.location.x, t.location.y)
-        coordinate_str = "(x,y,z) = ({},{},{})".format(t.location.x, t.location.y,t.location.z)
+        coordinate_str = "(x,y,z,pitch,yaw,roll) = ({},{},{},{},{},{})".format(t.location.x, t.location.y,t.location.z,t.rotation.pitch, t.rotation.yaw,t.rotation.roll)
         print (coordinate_str)
         time.sleep(_SLEEP_TIME_)
 

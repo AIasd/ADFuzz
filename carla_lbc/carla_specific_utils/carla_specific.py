@@ -454,6 +454,7 @@ def run_carla_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_arg
     route_str = sim_specific_arguments.route_str
     scenario_file = sim_specific_arguments.scenario_file
     call_from_dt = dt_arguments.call_from_dt
+    customized_data['terminate_on_collision'] = fuzzing_arguments.terminate_on_collision
 
     return run_carla_simulation_helper(customized_data,
     launch_server, episode_max_time, call_from_dt,

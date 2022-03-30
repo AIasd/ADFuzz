@@ -10,14 +10,17 @@ sys.path.append(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64
 sys.path.append(carla_root+'/PythonAPI/carla')
 sys.path.append(carla_root+'/PythonAPI')
 
-sys.path.append('leaderboard')
-sys.path.append('leaderboard/team_code')
-sys.path.append('scenario_runner')
-sys.path.append('carla_project')
-sys.path.append('carla_project/src')
 
+sys.path.append('.')
 sys.path.append('fuzzing_utils')
-sys.path.append('carla_specific_utils')
+sys.path.append('carla_lbc')
+sys.path.append('carla_lbc/leaderboard')
+sys.path.append('carla_lbc/leaderboard/team_code')
+sys.path.append('carla_lbc/scenario_runner')
+sys.path.append('carla_lbc/carla_project')
+sys.path.append('carla_lbc/carla_project/src')
+sys.path.append('carla_lbc/carla_specific_utils')
+
 # os.system('export PYTHONPATH=/home/zhongzzy9/anaconda3/envs/carla99/bin/python')
 
 
@@ -38,38 +41,32 @@ import torchvision.utils
 from torchvision import models
 import argparse
 
-from carla_specific import run_carla_simulation, get_event_location_and_object_type
+from carla_lbc.carla_specific_utils.carla_specific import run_carla_simulation, get_event_location_and_object_type, check_bug, get_unique_bugs, get_if_bug_list
 from object_types import pedestrian_types, vehicle_types, static_types, vehicle_colors
 
-from customized_utils import make_hierarchical_dir, exit_handler, check_bug, get_unique_bugs, get_if_bug_list, process_X, inverse_process_X, get_sorted_subfolders, load_data, get_picklename
-
-from pgd_attack import train_net, pgd_attack, extract_embed
-
+from customized_utils import make_hierarchical_dir, exit_handler, process_X, inverse_process_X, get_sorted_subfolders, load_data, get_picklename
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-p','--port', type=int, default=2045, help='TCP port(s) to listen to')
-parser.add_argument('--ego_car_model', type=str, default='auto_pilot', help='model to rerun chosen scenarios')
-parser.add_argument('--task', type=str, default='rerun', help='task to execute')
-parser.add_argument('--rerun_mode', type=str, default='train', help='only valid when task==rerun, need to set to either train or test')
-parser.add_argument('--rerun_data_scenario', type=str, default='common', help='only valid when task==rerun, common or town05_left_1vehicle_1ped')
-parser.add_argument('--data_category', type=str, default='bugs', help='only valid when task==rerun, need to set to bugs/non_bugs')
-parser.add_argument('--parent_folder', type=str, default='run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_6/2021_06_10_00_31_30,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', help='the parent folder consisting of fuzzing data')
+parser.add_argument('--ego_car_model', type=str, default='', help='model to rerun chosen scenarios. If not specified, the original one will be used.')
+
+parser.add_argument('--rerun_mode', type=str, default='all', help="need to set to one of ['all', 'train', 'test']")
+parser.add_argument('--data_category', type=str, default='bugs', help="need to set to one of ['bugs', 'non_bugs']")
+
+parser.add_argument('--parent_folder', type=str, default='', help='the parent folder that consists of fuzzing data. It should include both bugs and non_bugs folder.')
+
 parser.add_argument('--record_every_n_step', type=int, default=5, help='how many frames to save camera images')
 parser.add_argument('--is_save', type=int, default=1, help='save rerun results')
-parser.add_argument('--has_display', type=int, default=1, help='display the simulation')
+parser.add_argument('--has_display', type=int, default=1, help='display the simulation during rerun.')
 parser.add_argument("--debug", type=int, default=0, help="whether using the debug mode: planned paths will be visualized.")
 
 arguments = parser.parse_args()
 port = arguments.port
 # ['lbc', 'lbc_augment', 'auto_pilot']
 ego_car_model = arguments.ego_car_model
-# ['rerun', 'adv', 'tsne']
-task = arguments.task
 # ['train', 'test']
 rerun_mode = arguments.rerun_mode
-# ['common', 'town05_left_1vehicle_1ped']
-rerun_data_scenario = arguments.rerun_data_scenario
 # ['bugs', 'non_bugs']
 data_category = arguments.data_category
 parent_folder = arguments.parent_folder
@@ -84,14 +81,14 @@ os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
 random.seed(0)
 np.random.seed(0)
 torch.manual_seed(0)
-torch.set_deterministic(True)
+torch.use_deterministic_algorithms(True)
 torch.backends.cudnn.benchmark = False
 os.environ['HAS_DISPLAY'] = str(arguments.has_display)
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 
 
-def rerun_simulation(pickle_filename, is_save, rerun_save_folder, ind, sub_folder_name, scenario_file, ego_car_model='auto_pilot', x=[], record_every_n_step=10):
+def rerun_simulation(pickle_filename, is_save, rerun_save_folder, ind, sub_folder_name, scenario_file, ego_car_model='', x=[], record_every_n_step=10):
     is_bug = False
 
     # parameters preparation
@@ -104,8 +101,6 @@ def rerun_simulation(pickle_filename, is_save, rerun_save_folder, ind, sub_folde
     with open(pickle_filename, 'rb') as f_in:
         pf = pickle.load(f_in)
 
-        # port = pf['port']
-        port = 2099
         x = pf['x']
         fuzzing_content = pf['fuzzing_content']
         fuzzing_arguments = pf['fuzzing_arguments']
@@ -115,7 +110,9 @@ def rerun_simulation(pickle_filename, is_save, rerun_save_folder, ind, sub_folde
 
         route_type = pf['route_type']
         route_str = pf['route_str']
-        # ego_car_model = pf['ego_car_model']
+
+        if not ego_car_model:
+            ego_car_model = pf['ego_car_model']
 
         mask = pf['mask']
         labels = pf['labels']
@@ -132,6 +129,9 @@ def rerun_simulation(pickle_filename, is_save, rerun_save_folder, ind, sub_folde
     parent_folder = make_hierarchical_dir([rerun_save_folder, folder])
     fuzzing_arguments.parent_folder = parent_folder
     fuzzing_arguments.mean_objectives_across_generations_path = os.path.join(parent_folder, 'mean_objectives_across_generations.txt')
+
+    # TBD: temporary fix to be compatible with earlier data
+    fuzzing_arguments.terminate_on_collision = True
 
     objectives, run_info = run_carla_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_arguments, dt_arguments, launch_server, counter, port)
 
@@ -164,63 +164,24 @@ def rerun_simulation(pickle_filename, is_save, rerun_save_folder, ind, sub_folde
 
 
 
-def rerun_list_of_scenarios(parent_folder, rerun_save_folder, scenario_file, rerun_data_scenario, data_category, mode, ego_car_model, record_every_n_step=10, is_save=True):
+def rerun_list_of_scenarios(parent_folder, rerun_save_folder, scenario_file, data_category, mode, ego_car_model, record_every_n_step=10, is_save=True):
     import re
 
     subfolder_names = get_sorted_subfolders(parent_folder, data_category)
     print('len(subfolder_names)', len(subfolder_names))
 
+    mid = len(subfolder_names) // 2
+    random.shuffle(subfolder_names)
 
-    if rerun_data_scenario == 'town05_left_1vehicle_1ped':
-        cur_X, _, cur_objectives, _, _, _ = load_data(subfolder_names)
-        cur_X = np.array(cur_X)
+    train_subfolder_names = subfolder_names[:mid]
+    test_subfolder_names = subfolder_names[-mid:]
 
-        cur_locations, cur_object_type_list = get_event_location_and_object_type(subfolder_names, verbose=False)
-
-        collision_inds = cur_objectives[:, 0] > 0.01
-
-        subfolder_names = np.array(subfolder_names)[collision_inds]
-        cur_object_type_list = np.array(cur_object_type_list)[collision_inds]
-        # cur_locations = cur_locations[collision_inds]
-
-        pedestrian_collision_inds = cur_object_type_list == 'walker.pedestrian.0001'
-        vehicle_collision_inds = cur_object_type_list == 'vehicle.dodge_charger.police'
-
-        pedestrian_subfolder_names = subfolder_names[pedestrian_collision_inds]
-        vehicle_subfolder_names = subfolder_names[vehicle_collision_inds]
-
-
-        print('len(pedestrian_subfolder_names), len(vehicle_subfolder_names)', len(pedestrian_subfolder_names), len(vehicle_subfolder_names))
-
-        min_len = np.min([len(pedestrian_subfolder_names), len(vehicle_subfolder_names)])
-        mid = min_len // 2
-        print('mid', mid)
-
-        if mode == 'train':
-            chosen_subfolder_names = pedestrian_subfolder_names[:mid]
-        elif mode == 'test':
-            chosen_subfolder_names = pedestrian_subfolder_names[-mid:]
-        elif mode == 'all':
-            chosen_subfolder_names = subfolder_names
-
-    elif rerun_data_scenario == 'common':
-        mid = len(subfolder_names) // 2
-        random.shuffle(subfolder_names)
-
-        train_subfolder_names = subfolder_names[:mid]
-        test_subfolder_names = subfolder_names[-mid:]
-
-        if mode == 'train':
-            chosen_subfolder_names = train_subfolder_names
-        elif mode == 'test':
-            chosen_subfolder_names = test_subfolder_names
-        elif mode == 'all':
-            chosen_subfolder_names = subfolder_names
-    else:
-        raise
-
-
-
+    if mode == 'train':
+        chosen_subfolder_names = train_subfolder_names
+    elif mode == 'test':
+        chosen_subfolder_names = test_subfolder_names
+    elif mode == 'all':
+        chosen_subfolder_names = subfolder_names
 
     bug_num = 0
     objectives_avg = 0
@@ -261,9 +222,7 @@ if __name__ == '__main__':
     atexit.register(exit_handler, [port])
 
 
+    print('ego_car_model', ego_car_model, 'data_category', data_category, 'mode', rerun_mode)
+    rerun_save_folder = make_hierarchical_dir(['carla_lbc', 'rerun', rerun_mode, time_str])
 
-    if task == 'rerun':
-        print('ego_car_model', ego_car_model, 'data_category', data_category, 'rerun_data_scenario', rerun_data_scenario, 'mode', rerun_mode)
-        rerun_save_folder = make_hierarchical_dir(['rerun', rerun_data_scenario, rerun_mode, time_str])
-
-        rerun_list_of_scenarios(parent_folder, rerun_save_folder, scenario_file, rerun_data_scenario, data_category, rerun_mode, ego_car_model, record_every_n_step=record_every_n_step)
+    rerun_list_of_scenarios(parent_folder, rerun_save_folder, scenario_file, data_category, rerun_mode, ego_car_model, record_every_n_step=record_every_n_step)
