@@ -49,7 +49,7 @@ It should be noted that for NSGA2-SM, additional parameters like `warm_up_path` 
 <img src="gif_demos/apollo_schoolbus_collision.gif" width="40%" height="40%"/>
 
 
-## Uniqueness Definition for Traffic Violation Demos
+<!-- ## Uniqueness Definition for Traffic Violation Demos
 ### A Found Traffic Violation
 <img src="gif_demos/lbc_left_ped_8.gif" width="40%" height="40%"/>
 
@@ -57,7 +57,7 @@ It should be noted that for NSGA2-SM, additional parameters like `warm_up_path` 
 <img src="gif_demos/lbc_left_ped_971.gif" width="40%" height="40%"/>
 
 ### A Distinct One
-<img src="gif_demos/lbc_left_vehicle_982.gif" width="40%" height="40%"/>
+<img src="gif_demos/lbc_left_vehicle_982.gif" width="40%" height="40%"/> -->
 
 
 
@@ -159,4 +159,4 @@ If you use the project in your work, please consider citing it with:
 
 
 ## Reference
-This repo is partially built on top of [Carla Challenge (with LBC supported)](https://github.com/bradyz/2020_CARLA_challenge) and [pymoo](https://github.com/anyoptimization/pymoo)
+This repo leverages code from [Carla Challenge (with LBC supported)](https://github.com/bradyz/2020_CARLA_challenge) and [pymoo](https://github.com/anyoptimization/pymoo)
