@@ -40,8 +40,6 @@ def generate_fuzzing_content(fuzzing_arguments, scenario_labels, scenario_label_
     search_space_info = emptyobject()
     assign_key_value_pairs(search_space_info, fixed_hyperparameters, parameters_min_bounds, parameters_max_bounds)
 
-    keywords_dict = {}
-
     fuzzing_content = emptyobject(labels=labels, mask=mask, parameters_min_bounds=parameters_min_bounds, parameters_max_bounds=parameters_max_bounds, parameters_distributions=parameters_distributions, customized_constraints=[], customized_center_transforms=[], n_var=n_var, fixed_hyperparameters=fixed_hyperparameters, search_space_info=search_space_info, keywords_dict={})
 
     return fuzzing_content

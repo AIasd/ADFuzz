@@ -7,7 +7,7 @@ from customized_utils import is_distinct_vectorized
 # ---------------- Bug, Objective -------------------
 def check_bug(objectives):
     # speed needs to be larger than 0.1 to avoid false positive
-    return (objectives[-3] > 0.1 and objectives[-2]) or objectives[-1]
+    return objectives[-1]
 
 
 def process_specific_bug(

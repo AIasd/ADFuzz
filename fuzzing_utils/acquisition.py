@@ -250,7 +250,7 @@ class BatchBALD(Acquirer):
             pool_p_y = torch.zeros(len(sub_pool_data), c, k)
             for batch_idx, (data, _) in enumerate(pool_loader):
                 end_idx = batch_idx + data.shape[0]
-                torch.set_deterministic(True)
+                torch.use_deterministic_algorithms(True)
                 torch.manual_seed(0)
                 pool_p_y[batch_idx:end_idx] = torch.stack(
                     [
@@ -419,7 +419,7 @@ class BADGE(Acquirer):
 
             elif unique_len < len(pool_data):
                 pool_data = torch.utils.data.Subset(
-                    original_pool_data, np.arange(len(unique_len))
+                    original_pool_data, np.arange(unique_len)
                 )
 
         criterion = nn.BCELoss()

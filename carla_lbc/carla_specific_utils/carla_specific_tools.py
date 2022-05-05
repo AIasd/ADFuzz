@@ -167,8 +167,10 @@ def estimate_objectives(save_path, default_objectives=np.array([0., 20., 1., 7.,
                         print('other_actor_linear_speed is not numeric:', loc.group(5))
 
                     # only record valid collisions to promote valid collision bugs
-                    if ego_linear_speed > 0.1:
-                        is_collision = 1
+                    # if ego_linear_speed > 0.1:
+                    #     is_collision = 1
+                    # do not consider ego_linear_speed here but optionally use it in check_bug
+                    is_collision = 1
 
             elif infraction_type == "off_road":
                 loc = re.search(".*x=(.*), y=(.*), z=(.*)\)", infraction)

@@ -16,9 +16,11 @@ class Static(Object):
         super().__init__(model, x, y)
 
 class Pedestrian(Object):
-    def __init__(self, model, x, y, speed, waypoints):
+    def __init__(self, model, x, y, speed, travel_distance, yaw, waypoints):
         super().__init__(model, x, y)
         self.speed = speed
+        self.travel_distance = travel_distance
+        self.yaw = yaw
         self.waypoints = waypoints
 
 

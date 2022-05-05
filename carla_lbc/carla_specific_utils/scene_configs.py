@@ -275,6 +275,80 @@ customized_bounds_and_distributions = {
             }
         ],
     },
+    "leading_car_braking_town05_fixed_npc_num_specific": {
+        "customized_parameters_bounds": {
+            "friction_min": 0.9,
+            "friction_max": 0.9,
+            "num_of_weathers_min": 5,
+            "num_of_weathers_max": 5,
+            "num_of_static_min": 0,
+            "num_of_static_max": 0,
+            "num_of_pedestrians_min": 1,
+            "num_of_pedestrians_max": 1,
+            "num_of_vehicles_min": 1,
+            "num_of_vehicles_max": 1,
+
+            "pedestrian_x_min_0": 0.0,
+            "pedestrian_x_max_0": 0.0,
+            "pedestrian_y_min_0": -3,
+            "pedestrian_y_max_0": -3,
+            "pedestrian_yaw_min_0": 180,
+            "pedestrian_yaw_max_0": 180,
+            "pedestrian_speed_min_0": 0,
+            "pedestrian_speed_max_0": 0,
+            "pedestrian_trigger_distance_min_0": 4,
+            "pedestrian_trigger_distance_max_0": 4,
+            "pedestrian_dist_to_travel_min_0": 20,
+            "pedestrian_dist_to_travel_max_0": 20,
+            "num_of_pedestrian_types_min_0": 0,
+            "num_of_pedestrian_types_max_0": 0,
+
+
+            "vehicle_x_min_0": 0,
+            "vehicle_x_max_0": 0,
+            "vehicle_y_min_0": -8,
+            "vehicle_y_max_0": -8,
+            "vehicle_initial_speed_min_0": 3,
+            "vehicle_initial_speed_max_0": 3,
+            "vehicle_targeted_speed_min_0": 1,
+            "vehicle_targeted_speed_max_0": 1,
+            "vehicle_trigger_distance_min_0": 7,
+            "vehicle_trigger_distance_max_0": 7,
+            "vehicle_avoid_collision_min_0": 1,
+            "vehicle_avoid_collision_max_0": 1,
+            "vehicle_dist_to_travel_min_0": 50,
+            "vehicle_dist_to_travel_max_0": 50,
+            "vehicle_yaw_min_0": 270,
+            "vehicle_yaw_max_0": 270,
+            "num_of_vehicle_types_min_0": 2,
+            "num_of_vehicle_types_max_0": 2,
+            "num_of_vehicle_colors_min_0": 1,
+            "num_of_vehicle_colors_max_0": 1,
+
+            "vehicle_waypoint_follower_min_0": 1,
+            "vehicle_waypoint_follower_max_0": 1,
+            "vehicle_targeted_x_min_0": 17,
+            "vehicle_targeted_x_max_0": 17,
+            "vehicle_targeted_y_min_0": -26,
+            "vehicle_targeted_y_max_0": -26,
+        },
+        "customized_parameters_distributions": {
+            # "vehicle_x_0": ("normal", None, 0.5),
+            # "vehicle_y_0": ("normal", None, 4),
+        },
+        "customized_center_transforms": {
+            "pedestrian_center_transform_0": ("waypoint_ratio", 50),
+            # 'pedestrian_center_transform_0': ('absolute_location', -103, 4),
+            "vehicle_center_transform_0": ("absolute_location", -120, 30)
+        },
+        "customized_constraints": [
+            # {
+            #     "coefficients": [1, 1],
+            #     "labels": ["vehicle_y_0", "vehicle_trigger_distance_0"],
+            #     "value": 0,
+            # }
+        ],
+    },
     "turn_left_town05": {
         "customized_parameters_bounds": {
             "friction_min": 0.9,
@@ -408,6 +482,59 @@ customized_bounds_and_distributions = {
         "customized_center_transforms": {
             "vehicle_center_transform_0": ("waypoint_ratio", 0),
             "pedestrian_center_transform_0": ("waypoint_ratio", 50),
+        },
+        "customized_constraints": [],
+    },
+    "npc_change_lane_town05_one_vehicle": {
+        "customized_parameters_bounds": {
+            "friction_min": 0.9,
+            "friction_max": 0.9,
+
+            "num_of_weathers_min": 0,
+            "num_of_weathers_max": 0,
+
+            "num_of_static_min": 0,
+            "num_of_static_max": 0,
+            "num_of_pedestrians_min": 0,
+            "num_of_pedestrians_max": 0,
+            "num_of_vehicles_min": 1,
+            "num_of_vehicles_max": 1,
+
+            "num_of_vehicle_types_min_0": 1,
+            "num_of_vehicle_types_max_0": 1,
+            "vehicle_x_min_0": -3.66,
+            "vehicle_x_max_0": -3.66,
+            "vehicle_y_min_0": -10,
+            "vehicle_y_max_0": 10,
+            "vehicle_yaw_min_0": 270,
+            "vehicle_yaw_max_0": 270,
+            "vehicle_initial_speed_min_0": 0,
+            "vehicle_initial_speed_max_0": 0,
+            "vehicle_trigger_distance_min_0": 100,
+            "vehicle_trigger_distance_max_0": 100,
+            "vehicle_targeted_speed_min_0": 1,
+            "vehicle_targeted_speed_max_0": 10,
+            "vehicle_waypoint_follower_min_0": 1,
+            "vehicle_waypoint_follower_max_0": 1,
+
+            "vehicle_targeted_x_min_0": 0,
+            "vehicle_targeted_x_max_0": 0,
+            "vehicle_targeted_y_min_0": -40,
+            "vehicle_targeted_y_max_0": -40,
+
+            "vehicle_avoid_collision_min_0": 0,
+            "vehicle_avoid_collision_max_0": 0,
+            "vehicle_dist_to_travel_min_0": 30,
+            "vehicle_dist_to_travel_max_0": 30,
+
+            "vehicle_targeted_yaw_min_0": 270,
+            "vehicle_targeted_yaw_max_0": 270,
+            "num_of_vehicle_colors_min_0": 1,
+            "num_of_vehicle_colors_max_0": 1,
+        },
+        "customized_parameters_distributions": {},
+        "customized_center_transforms": {
+            "vehicle_center_transform_0": ("waypoint_ratio", 0),
         },
         "customized_constraints": [],
     },
@@ -1047,6 +1174,13 @@ customized_routes = {
         "direction": "front",
         "route_id": 0,
         "location_list": [(-120, 60), (-124, 26)],
+    },
+    # just go straight, town
+    "town05_front_2": {
+        "town_name": "Town05",
+        "direction": "front",
+        "route_id": 0,
+        "location_list": [(-120, 60), (-120, 20)],
     },
     # potential pick: go through signalized crossroad
     "town03_front_0": {

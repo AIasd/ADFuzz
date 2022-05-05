@@ -122,7 +122,8 @@ def initialize_dv_and_ego(sim, map, model_id, start, destination, BRIDGE_HOST, B
             print('finish setup_apollo')
             success = True
             break
-        except:
+        except Exception as e:
+            print(e)
             print('fail to spin up apollo, try again!')
             times += 1
     if not success:
@@ -455,35 +456,52 @@ def initialize_sim(map, sim_specific_arguments, arguments, customized_data, mode
 
         ped_point = lgsvl.Transform(position=middle_point_i.position+ped_position_offset, rotation=middle_point_i.rotation+ped_rotation_offset)
 
+
         wps = [lgsvl.WalkWaypoint(position=ped_point.position, idle=ped.waypoints[0].idle, trigger_distance=ped.waypoints[0].trigger_distance, speed=ped.speed)]
 
-
-        for j, wp in enumerate(ped.waypoints):
-            center_key_i_j = "pedestrian_"+str(i)+"_center_transform_"+str(j)
-            if center_key_i_j in customized_data:
-                # print(center_key_i_j)
-                middle_point_i = customized_data[center_key_i_j]
-                rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
-
-
-            j_next = np.min([j+1, len(ped.waypoints)-1])
-            wp_next = ped.waypoints[j_next]
-
-            wp_x, wp_y = rotate(wp.x, wp.y, rot_rad)
-
+        if ped.travel_distance > 0:
+            print('ped.travel_distance', ped.travel_distance, 'ped.yaw', ped.yaw)
+            wp_x = ped.travel_distance * np.sin(np.deg2rad(ped.yaw))
+            wp_y = ped.travel_distance * np.cos(np.deg2rad(ped.yaw))
+            # print('before', 'wp_x', wp_x, 'wp_y', wp_y)
+            # do not consider the rotation of the middle point in this case for easiter visualization
+            wp_x, wp_y = rotate(wp_x, wp_y, rot_rad)
             loc = middle_point_i.position+lgsvl.Vector(wp_x, 0, wp_y)
 
-            # to avoid pedestrian going off ground
-            # loc.y -= 0.1
+            j_next = np.min([1, len(ped.waypoints)-1])
+            wp_next = ped.waypoints[j_next]
 
             wps.append(lgsvl.WalkWaypoint(position=loc, idle=wp_next.idle, trigger_distance=wp_next.trigger_distance, speed=ped.speed))
+            # print('after', 'wp_x', wp_x, 'wp_y', wp_y)
+            print('wps', wps[0].position, wps[0].idle, wps[0].trigger_distance, wps[0].speed, wps[1].position, wps[1].idle, wps[1].trigger_distance, wps[1].speed)
+        else:
+            for j, wp in enumerate(ped.waypoints):
+                center_key_i_j = "pedestrian_"+str(i)+"_center_transform_"+str(j)
+                if center_key_i_j in customized_data:
+                    # print(center_key_i_j)
+                    middle_point_i = customized_data[center_key_i_j]
+                    rot_rad = np.deg2rad(360 - middle_point_i.rotation.y)
+
+
+                j_next = np.min([j+1, len(ped.waypoints)-1])
+                wp_next = ped.waypoints[j_next]
+
+                wp_x, wp_y = rotate(wp.x, wp.y, rot_rad)
+                loc = middle_point_i.position+lgsvl.Vector(wp_x, 0, wp_y)
+
+                wps.append(lgsvl.WalkWaypoint(position=loc, idle=wp_next.idle, trigger_distance=wp_next.trigger_distance, speed=ped.speed))
+
 
         state = lgsvl.AgentState()
         state.transform = ped_point
         # print('\n'*3, 'ped.model', ped.model, '\n'*3)
         p = sim.add_agent(pedestrian_types[ped.model], lgsvl.AgentType.PEDESTRIAN, state)
         p.on_collision(npc_on_collision)
-        p.follow(wps, False, waypoints_path_type='BezierSpline')
+
+        if ped.travel_distance > 0:
+            p.follow(wps, False)
+        else:
+            p.follow(wps, False, waypoints_path_type='BezierSpline')
         other_agents.append(p)
 
 

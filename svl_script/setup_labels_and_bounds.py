@@ -2,7 +2,7 @@
 SVL Labels API
 '''
 from collections import OrderedDict
-from .object_types import (
+from svl_script.object_types import (
     static_types,
     pedestrian_types,
     vehicle_types,
@@ -10,17 +10,12 @@ from .object_types import (
 from customized_utils import emptyobject
 
 
-# class emptyobject():
-#     def __init__(self, **kwargs):
-#         self.__dict__.update(kwargs)
 
 keywords_dict = {
     "num_of_static_types": len(static_types),
     "num_of_pedestrian_types": len(pedestrian_types),
     "num_of_vehicle_types": len(vehicle_types),
 }
-
-
 
 general_fields = [
     ("num_of_static", "int", 0, 0),
@@ -64,6 +59,9 @@ pedestrian_general_fields = [
     ("pedestrian_x", "real", -20, 20),
     ("pedestrian_y", "real", -20, 20),
     ("pedestrian_speed", "real", 1, 5),
+    # if pedestrian_travel_distance > 0, waypoint_x_0 and waypoint_y_0 will be estimated based on pedestrian_distance and pedestrian_yaw.
+    ("pedestrian_travel_distance", "real", 0, 0),
+    ("pedestrian_yaw", "real", 0, 0),
 ]
 
 vehicle_general_fields = [

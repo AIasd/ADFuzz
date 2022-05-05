@@ -13,7 +13,7 @@ from svl_script.simulation_utils import start_simulation
 from svl_script.scene_configs import customized_bounds_and_distributions, customized_routes
 from svl_script.object_types import pedestrian_types, car_types, large_car_types, static_types
 from svl_script.apollo_configs import vehicle_models
-
+backward = False
 def convert_x_to_customized_data(
     x,
     fuzzing_content,
@@ -64,7 +64,14 @@ def convert_x_to_customized_data(
             pedestrian_x_i = x[ind+1]
             pedestrian_y_i = x[ind+2]
             pedestrian_speed_i = x[ind+3]
-            ind += 4
+            if not backward:
+                pedestrian_travel_distance_i = x[ind+4]
+                pedestrian_yaw_i = x[ind+5]
+                ind += 6
+            else:
+                pedestrian_travel_distance_i = 0
+                pedestrian_yaw_i = 0
+                ind += 4
 
             pedestrian_waypoints_i = []
             for _ in range(waypoints_num_limit):
@@ -76,13 +83,18 @@ def convert_x_to_customized_data(
                 x=pedestrian_x_i,
                 y=pedestrian_y_i,
                 speed=pedestrian_speed_i,
+                travel_distance=pedestrian_travel_distance_i,
+                yaw=pedestrian_yaw_i,
                 waypoints=pedestrian_waypoints_i,
             )
 
             pedestrians_list.append(pedestrian_i)
 
         else:
-            ind += 4 + waypoints_num_limit * 4
+            if not backward:
+                ind += 6 + waypoints_num_limit * 4
+            else:
+                ind += 4 + waypoints_num_limit * 4
 
     # vehicles
     vehicles_list = []
@@ -609,13 +621,13 @@ def estimate_trajectory_vector(save_path, is_bug):
     for i, (_, fl) in enumerate(fields_limit.items()):
         if is_bug:
             tmp_vec = np.zeros(fl)
-            print('bug[i]', bug, i, bug[i])
+            # print('bug[i]', bug, i, bug[i])
             tmp_vec[bug[i]] = 1
         else:
             tmp_vec = np.ones(fl)*-1
         cur_vec.append(tmp_vec)
     cur_vec = np.concatenate(cur_vec)
-    print('cur_vec', cur_vec)
+    # print('cur_vec', cur_vec)
     return cur_vec
 
 
