@@ -14,3 +14,4 @@ src/
 run_results_op
 carla_lbc/rerun
 no_simulation_function_script/run_results_no_simulation
+*png
