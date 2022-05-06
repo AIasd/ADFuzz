@@ -104,11 +104,11 @@ pip3 install pytorch-lightning==0.8.5
 ```
 
 ## Documentations for the setup of each stack
-[CARLA0.9.9+LBC](https://github.com/AIasd/ADFuzz/stack1_carla_lbc.md)
+[CARLA0.9.9+LBC](https://github.com/AIasd/ADFuzz/blob/main/doc/stack1_carla_lbc.md)
 
-[SVL2021.3+Apollo Master](https://github.com/AIasd/ADFuzz/stack2_svl_apollo.md)
+[SVL2021.3+Apollo Master](https://github.com/AIasd/ADFuzz/blob/main/doc/stack2_svl_apollo.md)
 
-[No Simulation (Dataset)](https://github.com/AIasd/ADFuzz/stack3_no_simulation_dataset.md)
+[No Simulation (Dataset)](https://github.com/AIasd/ADFuzz/blob/main/doc/stack3_no_simulation_dataset.md)
 
 
 <!-- ## STACK4: CARLA0.9.11+OpenPilot (TBD)
