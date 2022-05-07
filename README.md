@@ -11,7 +11,8 @@ An open-source software package for fuzzing autonomous driving systems in high-f
 ### Current support of stacks
 - LBC + CARLA 0.9.9
 - Apollo(6.0 or later) + SVL 2021.3
-- No Simulation
+- No Simulation (Dataset)
+- No Simulation (Function)
 
 ### Current support of algorithms and variations
 ADFuzz currently support several algorithms and variations listed below. The relevant algorithm_name and key parameters are also mentioned.
@@ -103,12 +104,14 @@ Install pytroch-lightening
 pip3 install pytorch-lightning==0.8.5
 ```
 
-## Documentations for the setup of each stack
+## Documentations for the setup and instruction for each stack
 [CARLA0.9.9+LBC](https://github.com/AIasd/ADFuzz/blob/main/doc/stack1_carla_lbc.md)
 
 [SVL2021.3+Apollo Master](https://github.com/AIasd/ADFuzz/blob/main/doc/stack2_svl_apollo.md)
 
 [No Simulation (Dataset)](https://github.com/AIasd/ADFuzz/blob/main/doc/stack3_no_simulation_dataset.md)
+
+[No Simulation (Function)](https://github.com/AIasd/ADFuzz/blob/main/doc/stack4_no_simulation_function.md)
 
 
 <!-- ## STACK4: CARLA0.9.11+OpenPilot (TBD)

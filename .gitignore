@@ -13,5 +13,9 @@ svl_script/visualization
 src/
 run_results_op
 carla_lbc/rerun
+carla_lbc/leaderboard/data/customized_routes
 no_simulation_function_script/run_results_no_simulation
 *png
+interp
+*.txt
+*.pickle

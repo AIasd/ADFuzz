@@ -119,6 +119,11 @@ def parse_fuzzing_arguments():
     parser.add_argument('--grid_dict_name', type=str, default='grid_dict_one_ped_town07')
     parser.add_argument('--grid_start_index', type=int, default=0)
 
+    # used only when simulator == 'no_simulation_function'
+    parser.add_argument('--synthetic_function', type=str, default='')
+
+    # used only when algorithm_name == 'random_local_sphere'
+    parser.add_argument('--chosen_labels', nargs='+', type=str, default=[])
 
 
     parser.add_argument('--check_unique_coeff', nargs='+', type=float, default=default_check_unique_coeff, help='the thresholds (norm, th_2, th_1) used to count unique bugs. Currently, norm is always set to 0. For a given type of traffic  violation (collision or out-of-road), two violations caused by specific scenarios x and y are unique if at least th1 of the total number of changeable fields are different between the two. For a continuous field, the corresponding normalized values should be distinguishable by at least th2. (See section 4.1 in our paper for more details.)')
@@ -1069,11 +1074,79 @@ def select_batch_max_d_greedy(d_list, train_test_cutoff, batch_size):
         chosen_inds.append(chosen_ind)
     return chosen_inds
 
+def torch_subset(pool_data):
+    return torch.utils.data.Subset(pool_data, np.arange(len(pool_data)))
 
 
 # ---------------- acquisition related -------------------
 
+# ---------------- metric related -------------------
+def angle_distance_adjustment(values, angle_max):
+    diff_forward = values
+    diff_backward = angle_max-values
+    diff_both = np.stack([diff_forward, diff_backward], axis=2)
+    return np.min(diff_both, axis=2)
 
+
+def get_pairwise_distances(X_query, X_query_2, angle_features, scales):
+    diff_raw = np.abs(np.expand_dims(X_query, axis=1) - np.expand_dims(X_query_2, axis=0))
+    for angle_feature in angle_features:
+        diff_raw[:, :, angle_feature] = angle_distance_adjustment(diff_raw[:, :, angle_feature], 360)
+    for i, scale in enumerate(scales):
+        diff_raw[:, :, angle_feature] /= scale
+    diff_norm = np.sum(np.abs(diff_raw), axis=2)
+    return diff_norm
+
+def get_boundary_perc_and_avg_boundary_dist(X_query, y_query, angle_features, scales):
+    diff_norm = get_pairwise_distances(X_query, X_query, angle_features, scales)
+
+    # precision
+    total_count = diff_norm.shape[0]
+    boundary_count = 0
+    boundary_inds_list = []
+    for i in range(total_count):
+        inds = np.where(diff_norm[i] <= 1)[0]
+        for j in inds:
+            if j != i and y_query[i] != y_query[j]:
+                boundary_inds_list.append(i)
+
+    boundary_perc = len(boundary_inds_list)/total_count
+
+    # coverage
+    dist_list = []
+    for i in range(len(boundary_inds_list)):
+        for j in range(len(boundary_inds_list)):
+            if i != j:
+                dist_list.append(diff_norm[i, j])
+    print('total_count', total_count)
+    print('len(boundary_inds_list):', len(boundary_inds_list))
+    print('len(dist_list):', len(dist_list))
+    avg_boundary_dist = np.mean(dist_list)
+
+    return boundary_perc, avg_boundary_dist
+
+def nndv(X_train, y_train, X_test, pop_size, angle_features, scales):
+    diff_norm = get_pairwise_distances(X_test, X_train, angle_features, scales)
+
+    score_variance = np.zeros(diff_norm.shape[0])
+    avg_neighbor_dist = np.zeros(diff_norm.shape[0])
+
+    for i in range(diff_norm.shape[0]):
+        neighbor_inds = np.argsort(diff_norm[i])[:10]
+        neighbor_values = np.sort(diff_norm[i])[:10]
+
+
+        score_variance[i] = np.std(y_train[neighbor_inds])
+        avg_neighbor_dist[i] = np.mean(neighbor_values)
+    print(X_test.shape)
+    print(np.min(score_variance), np.max(score_variance), np.mean(score_variance), np.median(score_variance))
+    print(np.min(avg_neighbor_dist), np.max(avg_neighbor_dist), np.mean(avg_neighbor_dist), np.median(avg_neighbor_dist))
+    w = 1.0
+    scores = score_variance * w + avg_neighbor_dist * (1-w)
+    inds = np.argsort(scores)[-pop_size:]
+
+    return inds
+# ---------------- metric related -------------------
 
 
 def get_job_results(tmp_run_info_list, x_sublist, objectives_sublist_non_traj, trajectory_vector_sublist, x_list, objectives_list, trajectory_vector_list, traj_dist_metric=None):

@@ -78,7 +78,6 @@ from multiprocessing import Process, Manager, set_start_method
 
 
 from pymoo.model.problem import Problem
-from pymoo.model.sampling import Sampling
 from pymoo.model.crossover import Crossover
 from pymoo.model.mutation import Mutation
 from pymoo.model.population import Population
@@ -104,16 +103,13 @@ Configuration.show_compile_hint = False
 
 from pgd_attack import pgd_attack, train_net, train_regression_net, VanillaDataset
 from acquisition import map_acquisition
+from sampling import MySamplingVectorized, GridSampling, RandomDirectionSampling
 
-from customized_utils import rand_real,  make_hierarchical_dir, exit_handler, is_critical_region, if_violate_constraints, filter_critical_regions, encode_fields, remove_fields_not_changing, get_labels_to_encode, customized_fit, customized_standardize, customized_inverse_standardize, decode_fields, encode_bounds, recover_fields_not_changing, process_X, inverse_process_X, calculate_rep_d, select_batch_max_d_greedy, if_violate_constraints_vectorized, is_distinct_vectorized, eliminate_repetitive_vectorized, get_sorted_subfolders, load_data, get_F, set_general_seed, emptyobject, get_job_results, choose_farthest_offs
-
-
+from customized_utils import rand_real,  make_hierarchical_dir, exit_handler, is_critical_region, if_violate_constraints, filter_critical_regions, encode_fields, remove_fields_not_changing, get_labels_to_encode, customized_fit, customized_standardize, customized_inverse_standardize, decode_fields, encode_bounds, recover_fields_not_changing, process_X, inverse_process_X, calculate_rep_d, select_batch_max_d_greedy, if_violate_constraints_vectorized, is_distinct_vectorized, eliminate_repetitive_vectorized, get_sorted_subfolders, load_data, get_F, set_general_seed, emptyobject, get_job_results, choose_farthest_offs, torch_subset
 
 
 # eliminate some randomness
 set_general_seed(seed=fuzzing_arguments.random_seed)
-# random_seeds = [0, 10, 20]
-rng = np.random.default_rng(fuzzing_arguments.random_seed)
 
 def fun(obj, x, launch_server, counter, port, return_dict):
     dt = obj.dt
@@ -138,7 +134,7 @@ def fun(obj, x, launch_server, counter, port, return_dict):
         objectives, run_info  = run_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_arguments, dt_arguments, launch_server, counter, port)
 
         print('\n'*3)
-        print("counter, run_info['is_bug'], run_info['bug_type'], objectives", counter, run_info['is_bug'], run_info['bug_type'], objectives)
+        print("counter:", counter, " run_info['is_bug']:", run_info['is_bug'], " run_info['bug_type']:", run_info['bug_type'], " objectives:", objectives)
         print('\n'*3)
 
         # correct_travel_dist(x, labels, customized_data['tmp_travel_dist_file'])
@@ -225,7 +221,6 @@ class MyProblem(Problem):
         n_var = fuzzing_content.n_var
 
 
-
         self.p, self.c, self.th = self.check_unique_coeff
         self.launch_server = True
         self.objectives_list = []
@@ -233,7 +228,6 @@ class MyProblem(Problem):
         self.x_list = []
         self.y_list = []
         self.F_list = []
-
 
 
         super().__init__(n_var=n_var, n_obj=4, n_constr=0, xl=xl, xu=xu)
@@ -275,7 +269,7 @@ class MyProblem(Problem):
             x = X[cur_i]
 
             # No need to use subprocess when no simulation is running
-            if self.fuzzing_arguments.simulator == 'no_simulation':
+            if self.fuzzing_arguments.simulator in ['no_simulation_dataset', 'no_simulation_function']:
                 return_dict = {}
                 fun(self, x, launch_server, self.counter, port, return_dict)
             else:
@@ -343,16 +337,12 @@ class MyProblem(Problem):
         self.time_list.append(time_elapsed)
 
 
-
-
         current_F = get_F(job_results, self.objectives_list, objective_weights, self.use_single_objective, standardize=standardize_objective, normalize=normalize_objective)
 
         out["F"] = current_F
         self.F_list.append(current_F)
-        print('\n'*3, 'self.F_list', len(self.F_list), self.F_list, '\n'*3)
-
+        # print('\n'*3, 'self.F_list', len(self.F_list), self.F_list, '\n'*3)
         print('\n'*10, '+'*100)
-
 
 
         bugs_type_list_tmp = self.bugs_type_list
@@ -387,194 +377,8 @@ class MyProblem(Problem):
             f_out.write(str(info_dict))
             f_out.write(';'.join([str(ind) for ind in unique_bugs_inds_list])+' objective_weights : '+str(self.objective_weights)+'\n')
         print(info_dict)
+
         print('+'*100, '\n'*10)
-
-
-
-class GridSampling(Sampling):
-    def __init__(self, grid_start_index, grid_dict):
-        self.grid_start_index = grid_start_index
-
-        import itertools
-        gird_value_list = list(itertools.product(*list(grid_dict.values())))
-        print('total combinations:', len(gird_value_list))
-        gird_value_list = list(zip(*gird_value_list))
-        self.grid_value_dict = {k:gird_value_list[i] for i, k in enumerate(grid_dict.keys())}
-
-
-    def _do(self, problem, n_samples, **kwargs):
-        xl = problem.xl
-        xu = problem.xu
-        mask = np.array(problem.mask)
-        labels = problem.labels
-        parameters_distributions = problem.parameters_distributions
-        print('\n', 'self.grid_start_index:', self.grid_start_index, '\n')
-        def subroutine(X):
-            def sample_one_feature(typ, lower, upper, dist, label, size=1):
-                assert lower <= upper, label+','+str(lower)+'>'+str(upper)
-                if typ == 'int':
-                    val = rng.integers(lower, upper+1, size=size)
-                elif typ == 'real':
-                    if dist[0] == 'normal':
-                        if dist[1] == None:
-                            mean = (lower+upper)/2
-                        else:
-                            mean = dist[1]
-                        val = rng.normal(mean, dist[2], size=size)
-                    else: # default is uniform
-                        val = rng.random(size=size) * (upper - lower) + lower
-                    val = np.clip(val, lower, upper)
-                return val
-            n_samples_sampling = n_samples
-            while len(X) < n_samples:
-                cur_X = []
-                for i, dist in enumerate(parameters_distributions):
-                    typ = mask[i]
-                    lower = xl[i]
-                    upper = xu[i]
-                    label = labels[i]
-                    if label in self.grid_value_dict:
-                        assert self.grid_start_index+n_samples_sampling <= len(self.grid_value_dict[label]), str(self.grid_start_index+n_samples_sampling)+'>'+str(len(self.grid_value_dict[label]))
-                        val = self.grid_value_dict[label][self.grid_start_index:self.grid_start_index+n_samples_sampling]
-                    else:
-                        val = sample_one_feature(typ, lower, upper, dist, label, size=n_samples_sampling)
-                    cur_X.append(val)
-                cur_X = np.swapaxes(np.stack(cur_X),0,1)
-
-                remaining_inds = if_violate_constraints_vectorized(cur_X, problem.customized_constraints, problem.labels, problem.ego_start_position, verbose=False)
-                if len(remaining_inds) == 0:
-                    continue
-
-                cur_X = cur_X[remaining_inds]
-                X.extend(cur_X)
-
-                self.grid_start_index += n_samples
-                n_samples_sampling = n_samples - len(X)
-
-            return X
-        X = []
-        X = subroutine(X)
-
-        if len(X) > 0:
-            X = np.stack(X)
-        else:
-            X = np.array([])
-
-        return X
-
-
-class MySamplingVectorized(Sampling):
-
-    def __init__(self, use_unique_bugs, check_unique_coeff, sample_multiplier=500):
-        self.use_unique_bugs = use_unique_bugs
-        self.check_unique_coeff = check_unique_coeff
-        self.sample_multiplier = sample_multiplier
-        assert len(self.check_unique_coeff) == 3
-    def _do(self, problem, n_samples, **kwargs):
-        p, c, th = self.check_unique_coeff
-        xl = problem.xl
-        xu = problem.xu
-        mask = np.array(problem.mask)
-        labels = problem.labels
-        parameters_distributions = problem.parameters_distributions
-
-
-        if self.sample_multiplier >= 50:
-            max_sample_times = self.sample_multiplier // 50
-            n_samples_sampling = n_samples * 50
-        else:
-            max_sample_times = self.sample_multiplier
-            n_samples_sampling = n_samples
-
-        algorithm = kwargs['algorithm']
-
-        tmp_off = algorithm.tmp_off
-
-
-        tmp_off_and_X = []
-        if len(tmp_off) > 0:
-            tmp_off = [off.X for off in tmp_off]
-            tmp_off_and_X = tmp_off
-
-
-        def subroutine(X, tmp_off_and_X):
-            def sample_one_feature(typ, lower, upper, dist, label, size=1):
-                assert lower <= upper, label+','+str(lower)+'>'+str(upper)
-                if typ == 'int':
-                    val = rng.integers(lower, upper+1, size=size)
-                elif typ == 'real':
-                    if dist[0] == 'normal':
-                        if dist[1] == None:
-                            mean = (lower+upper)/2
-                        else:
-                            mean = dist[1]
-                        val = rng.normal(mean, dist[2], size=size)
-                    else: # default is uniform
-                        val = rng.random(size=size) * (upper - lower) + lower
-                    val = np.clip(val, lower, upper)
-                return val
-
-            # TBD: temporary
-            sample_time = 0
-            while sample_time < max_sample_times and len(X) < n_samples:
-                print('sample_time / max_sample_times', sample_time, '/', max_sample_times, 'len(X)', len(X))
-                sample_time += 1
-                cur_X = []
-                for i, dist in enumerate(parameters_distributions):
-                    typ = mask[i]
-                    lower = xl[i]
-                    upper = xu[i]
-                    label = labels[i]
-                    val = sample_one_feature(typ, lower, upper, dist, label, size=n_samples_sampling)
-                    cur_X.append(val)
-                cur_X = np.swapaxes(np.stack(cur_X),0,1)
-
-
-                remaining_inds = if_violate_constraints_vectorized(cur_X, problem.customized_constraints, problem.labels, problem.ego_start_position, verbose=False)
-                if len(remaining_inds) == 0:
-                    continue
-
-                cur_X = cur_X[remaining_inds]
-
-                if not self.use_unique_bugs:
-                    X.extend(cur_X)
-                    if len(X) > n_samples:
-                        X = X[:n_samples]
-                else:
-                    if len(tmp_off_and_X) > 0 and len(problem.interested_unique_bugs) > 0:
-                        prev_X = np.concatenate([problem.interested_unique_bugs, tmp_off_and_X])
-                    elif len(tmp_off_and_X) > 0:
-                        prev_X = tmp_off_and_X
-                    else:
-                        prev_X = problem.interested_unique_bugs
-
-                    remaining_inds = is_distinct_vectorized(cur_X, prev_X, mask, xl, xu, p, c, th, verbose=False)
-
-                    if len(remaining_inds) == 0:
-                        continue
-                    else:
-                        cur_X = cur_X[remaining_inds]
-                        X.extend(cur_X)
-                        if len(X) > n_samples:
-                            X = X[:n_samples]
-                        if len(tmp_off) > 0:
-                            tmp_off_and_X = tmp_off + X
-                        else:
-                            tmp_off_and_X = X
-            return X, sample_time
-
-
-        X = []
-        X, sample_time_1 = subroutine(X, tmp_off_and_X)
-
-        if len(X) > 0:
-            X = np.stack(X)
-        else:
-            X = np.array([])
-        print('\n'*3, 'We sampled', X.shape[0], '/', n_samples, 'samples', 'by sampling', sample_time_1, 'times' '\n'*3)
-
-        return X
-
 
 
 def do_emcmc(parents, off, n_gen, objective_weights, default_objectives):
@@ -753,11 +557,11 @@ class MyMatingVectorized(Mating):
 
 
 class NSGA2_CUSTOMIZED(NSGA2):
-    def __init__(self, dt=False, X=None, F=None, fuzzing_arguments=None, plain_sampling=None, local_mating=None, **kwargs):
+    def __init__(self, dt=False, X=None, F=None, fuzzing_arguments=None, random_sampling=None, local_mating=None, **kwargs):
         self.dt = dt
         self.X = X
         self.F = F
-        self.plain_sampling = plain_sampling
+        self.random_sampling = random_sampling
 
         self.sampling = kwargs['sampling']
         self.pop_size = fuzzing_arguments.pop_size
@@ -782,7 +586,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
         super().__init__(pop_size=self.pop_size, n_offsprings=self.n_offsprings, **kwargs)
 
-        self.plain_initialization = Initialization(self.plain_sampling, individual=Individual(), repair=self.repair, eliminate_duplicates= NoDuplicateElimination())
+        self.random_initialization = Initialization(self.random_sampling, individual=Individual(), repair=self.repair, eliminate_duplicates= NoDuplicateElimination())
 
 
         # heuristic: we keep up about 1 times of each generation's population
@@ -896,7 +700,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
                             with open('tmp_log.txt', 'a') as f_out:
                                 f_out.write(str(self.cur_gen)+' restart'+'\n')
 
-                            tmp_off_candidates = self.plain_initialization.do(self.problem, 1000, algorithm=self)
+                            tmp_off_candidates = self.random_initialization.do(self.problem, 1000, algorithm=self)
                             tmp_off_candidates_X = np.stack([p.X for p in tmp_off_candidates])
                             chosen_inds = choose_farthest_offs(tmp_off_candidates_X, self.all_pop_run_X, self.pop_size)
                             self.tmp_off = tmp_off_candidates[chosen_inds]
@@ -928,12 +732,51 @@ class NSGA2_CUSTOMIZED(NSGA2):
                         self.cur_gen += 1
             else:
                 # initialization
-                self.tmp_off = self.plain_initialization.do(self.problem, self.n_offsprings, algorithm=self)
+                self.tmp_off = self.random_initialization.do(self.problem, self.n_offsprings, algorithm=self)
                 self.cur_gen += 1
 
 
         elif self.algorithm_name in ['random', 'grid']:
-            self.tmp_off = self.plain_initialization.do(self.problem, self.n_offsprings, algorithm=self)
+            self.tmp_off = self.initialization.do(self.problem, self.n_offsprings, algorithm=self)
+        elif self.algorithm_name in ['random_local_sphere']:
+            # print('self.sampling.cur_ind', self.sampling.cur_ind)
+            # if self.sampling.cur_ind > -1:
+            #     print('self.sampling.spheres[self.sampling.cur_ind].sampling_num', self.sampling.spheres[self.sampling.cur_ind].sampling_num)
+            if len(self.sampling.spheres) > 0 and self.sampling.spheres[self.sampling.cur_ind].if_local_sampling():
+                latest_ind, latest_x, latest_y = len(self.problem.x_list)-1, self.problem.x_list[-1], self.problem.y_list[-1]
+                self.sampling.update_cur_sphere(latest_ind, latest_x, latest_y)
+
+            if len(self.sampling.spheres) == 0 or not self.sampling.spheres[self.sampling.cur_ind].if_local_sampling():
+                self.sampling.add_uncovered_coverable_bugs(self.problem.x_list, self.problem.y_list)
+                uncovered_bug = self.sampling.find_an_uncovered_bug(self.problem.x_list, self.problem.y_list)
+                # If an uncovered bug is found by global sampling
+                if uncovered_bug:
+                    self.sampling.new_sphere(uncovered_bug, self.problem.x_list, self.problem.y_list)
+                    tmp_val = self.sampling._do(self.problem, self.n_offsprings)
+                    pop = Population(0, individual=Individual())
+                    self.tmp_off = pop.new("X", tmp_val)
+                # do global sampling when no available bug can be used as a new center
+                else:
+                    offspring_multiplier = 1000
+                    sphere_center_d_th_random_sampling = 0.1
+
+                    tmp_x_list = self.random_sampling._do(self.problem, self.n_offsprings*offspring_multiplier, algorithm=self)
+                    d_list = self.sampling.d_to_spheres(tmp_x_list)
+
+                    candidate_x_list_inds = np.where(d_list > sphere_center_d_th_random_sampling)[0]
+                    if len(candidate_x_list_inds) < self.n_offsprings:
+                        candidate_x_list_inds = np.argsort(d_list)[-self.n_offsprings:]
+                        tmp_val = np.array(tmp_x_list)[candidate_x_list_inds]
+                    else:
+                        tmp_val = np.random.choice(candidate_x_list_inds, size=self.n_offsprings, replace=False)
+                        tmp_val = np.array(tmp_x_list)[candidate_x_list_inds]
+                    pop = Population(0, individual=Individual())
+                    self.tmp_off = pop.new("X", tmp_val)
+            else:
+                tmp_val = self.sampling._do(self.problem, self.n_offsprings)
+                pop = Population(0, individual=Individual())
+                self.tmp_off = pop.new("X", tmp_val)
+
         else:
             if self.algorithm_name == 'random-un':
                 self.tmp_off, parents = [], []
@@ -962,7 +805,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
             if len(self.tmp_off) < self.n_offsprings:
                 remaining_num = self.n_offsprings - len(self.tmp_off)
-                remaining_off = self.plain_initialization.do(self.problem, remaining_num, algorithm=self)
+                remaining_off = self.random_initialization.do(self.problem, remaining_num, algorithm=self)
                 remaining_parrents = remaining_off
 
                 self.tmp_off = Population.merge(self.tmp_off, remaining_off)
@@ -972,10 +815,12 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
 
         # if the mating could not generate any new offspring (duplicate elimination might make that happen)
-        if len(self.tmp_off) == 0 or (not self.problem.call_from_dt and self.problem.fuzzing_arguments.finish_after_has_run and self.problem.has_run >= self.problem.fuzzing_arguments.has_run_num):
+        no_offspring = len(self.tmp_off) == 0
+        not_nsga2_dt_and_finish_has_run = not self.problem.call_from_dt and self.problem.fuzzing_arguments.finish_after_has_run and self.problem.has_run >= self.problem.fuzzing_arguments.has_run_num
+        if no_offspring or not_nsga2_dt_and_finish_has_run:
             self.termination.force_termination = True
             print("Mating cannot generate new springs, terminate earlier.")
-            print('self.tmp_off', len(self.tmp_off), self.tmp_off)
+            print('self.tmp_off', len(self.tmp_off))
             return
         # if not the desired number of offspring could be created
         elif len(self.tmp_off) < self.n_offsprings:
@@ -984,11 +829,14 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
 
         # additional step to rank and select self.off after gathering initial population
-        if (self.rank_mode == 'none') or (self.rank_mode in ['nn', 'adv_nn'] and (len(self.problem.objectives_list) < self.initial_fit_th or  np.sum(determine_y_upon_weights(self.problem.objectives_list, self.problem.objective_weights)) < self.min_bug_num_to_fit_dnn)) or (self.rank_mode in ['regression_nn'] and len(self.problem.objectives_list) < self.pop_size):
+        no_ranking = self.rank_mode == 'none'
+        cla_nn_ranking_and_no_enough_samples = self.rank_mode in ['nn', 'adv_nn'] and (len(self.problem.objectives_list) < self.initial_fit_th or  np.sum(determine_y_upon_weights(self.problem.objectives_list, self.problem.objective_weights)) < self.min_bug_num_to_fit_dnn)
+        reg_ranking_and_no_enough_samples = self.rank_mode in ['regression_nn'] and len(self.problem.objectives_list) < self.pop_size
+
+        if no_ranking or cla_nn_ranking_and_no_enough_samples or reg_ranking_and_no_enough_samples:
             self.off = self.tmp_off[:self.pop_size]
         else:
             if self.rank_mode in ['regression_nn']:
-                # only consider collision case for now
                 from customized_utils import pretrain_regression_nets
 
                 if self.regression_nn_use_running_data:
@@ -1026,8 +874,6 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
             print('process_X finished')
             if self.rank_mode in ['regression_nn']:
-                # only consider collision case for now
-
                 weight_inds = choose_weight_inds(self.problem.objective_weights)
                 obj_preds = []
                 for clf in clfs:
@@ -1075,30 +921,38 @@ class NSGA2_CUSTOMIZED(NSGA2):
                     print('no more offsprings to run (regression nn)')
                     self.off = Population(0, individual=Individual())
             else:
+                # ---seed selection---
                 if self.uncertainty:
-                    # [None, 'BUGCONF', 'Random', 'BALD', 'BatchBALD']
-                    print('uncertainty', self.uncertainty)
-                    uncertainty_key, uncertainty_conf = self.uncertainty.split('_')
-
-                    acquisition_strategy = map_acquisition(uncertainty_key)
-                    acquirer = acquisition_strategy(self.pop_size)
-
-                    if uncertainty_conf == 'conf':
-                        uncertainty_conf = True
-                    else:
-                        uncertainty_conf = False
-
-                    pool_data = VanillaDataset(X_test, np.zeros(X_test.shape[0]), to_tensor=True)
-                    pool_data = torch.utils.data.Subset(pool_data, np.arange(len(pool_data)))
-
                     y_train = determine_y_upon_weights(self.problem.objectives_list, self.problem.objective_weights)
-                    clf = train_net(X_train, y_train, [], [], batch_train=60, device_name=self.device_name)
 
-                    if self.use_unique_bugs:
-                        unique_len = self.tmp_off_type_1_len
+                    print('uncertainty', self.uncertainty)
+                    if self.uncertainty == 'nndv':
+                        from customized_utils import nndv
+                        # TBD: make the following can be adjusted from the interface
+                        angle_features = [2]
+                        scales = [2, 2, 15]
+                        inds = nndv(X_train, y_train, X_test, self.pop_size, angle_features, scales)
                     else:
-                        unique_len = 0
-                    inds = acquirer.select_batch(clf, pool_data, unique_len=unique_len, uncertainty_conf=uncertainty_conf)
+                        uncertainty_key, uncertainty_conf = self.uncertainty.split('_')
+
+                        acquisition_strategy = map_acquisition(uncertainty_key)
+                        acquirer = acquisition_strategy(self.pop_size)
+
+                        if uncertainty_conf == 'conf':
+                            uncertainty_conf = True
+                        else:
+                            uncertainty_conf = False
+
+                        pool_data = torch_subset(VanillaDataset(X_test, np.zeros(X_test.shape[0]), to_tensor=True))
+
+                        clf = train_net(X_train, y_train, [], [], batch_train=60, device_name=self.device_name)
+
+                        if self.use_unique_bugs:
+                            unique_len = self.tmp_off_type_1_len
+                        else:
+                            unique_len = 0
+                        inds = acquirer.select_batch(clf, pool_data, unique_len=unique_len, uncertainty_conf=uncertainty_conf)
+
                 else:
                     adv_conf_th = self.adv_conf_th
                     attack_stop_conf = self.attack_stop_conf
@@ -1157,7 +1011,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
                     print('sorted(scores)', sorted(scores))
                     print('chosen indices', inds)
 
-
+                # ---additional mutation on selected seeds---
                 if self.rank_mode == 'nn':
                     self.off = self.tmp_off[inds]
                 elif self.rank_mode == 'adv_nn':
@@ -1211,7 +1065,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
             self.evaluator.eval(self.problem, self.off, algorithm=self)
 
 
-        if self.algorithm_name in ['random', 'avfuzzer', 'grid']:
+        if self.algorithm_name in ['random', 'avfuzzer', 'grid', 'random_local_sphere']:
             self.pop = self.off
         elif self.emcmc:
             new_pop = do_emcmc(parents, self.off, self.n_gen, self.problem.objective_weights, self.problem.fuzzing_arguments.default_objectives)
@@ -1294,7 +1148,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
             if self.use_unique_bugs:
                 pop = self.initialization.do(self.problem, self.problem.fuzzing_arguments.pop_size, algorithm=self)
             else:
-                pop = self.plain_initialization.do(self.problem, self.pop_size, algorithm=self)
+                pop = self.random_initialization.do(self.problem, self.pop_size, algorithm=self)
             pop.set("n_gen", self.n_gen)
 
 
@@ -1504,8 +1358,9 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
                     repair=repair,
                     eliminate_duplicates=eliminate_duplicates)
 
+    random_sampling = MySamplingVectorized(random_seed=fuzzing_arguments.random_seed, use_unique_bugs=False, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
 
-    sampling = MySamplingVectorized(use_unique_bugs=fuzzing_arguments.use_unique_bugs, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
+
 
     # For grid search
     if fuzzing_arguments.algorithm_name == 'grid':
@@ -1513,11 +1368,13 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
         assert fuzzing_arguments.grid_dict_name
         grid_start_index = fuzzing_arguments.grid_start_index
         grid_dict = grid_dict_dict[fuzzing_arguments.grid_dict_name]
-        plain_sampling = GridSampling(grid_start_index, grid_dict)
+        sampling = GridSampling(random_seed=fuzzing_arguments.random_seed, grid_start_index=grid_start_index, grid_dict=grid_dict)
+    elif fuzzing_arguments.algorithm_name == 'random_local_sphere':
+        sampling = RandomDirectionSampling(random_seed=fuzzing_arguments.random_seed, chosen_labels=fuzzing_arguments.chosen_labels)
     else:
-        plain_sampling = MySamplingVectorized(use_unique_bugs=False, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
+        sampling = MySamplingVectorized(random_seed=fuzzing_arguments.random_seed, use_unique_bugs=fuzzing_arguments.use_unique_bugs, check_unique_coeff=problem.check_unique_coeff, sample_multiplier=fuzzing_arguments.sample_multiplier)
 
-    algorithm = NSGA2_CUSTOMIZED(dt=dt_arguments.dt, X=dt_arguments.X, F=dt_arguments.F, fuzzing_arguments=fuzzing_arguments, plain_sampling=plain_sampling, local_mating=local_mating, sampling=sampling,
+    algorithm = NSGA2_CUSTOMIZED(dt=dt_arguments.dt, X=dt_arguments.X, F=dt_arguments.F, fuzzing_arguments=fuzzing_arguments, random_sampling=random_sampling, local_mating=local_mating, sampling=sampling,
     crossover=crossover,
     mutation=mutation,
     eliminate_duplicates=eliminate_duplicates,
@@ -1556,6 +1413,13 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
 
     print('We have found', len(problem.bugs), 'bugs in total.')
 
+
+    # additional saving for random_local_sphere
+    if fuzzing_arguments.algorithm_name in ['random_local_sphere']:
+        with open(os.path.join(fuzzing_arguments.parent_folder, 'spheres.pickle'), 'wb') as f_out:
+            print('len(algorithm.sampling.spheres[0].members', len(algorithm.sampling.spheres[0].members))
+            print('len(algorithm.sampling.spheres[1].members', len(algorithm.sampling.spheres[1].members))
+            pickle.dump(algorithm.sampling.spheres, f_out)
 
 
     if len(problem.x_list) > 0:
@@ -1702,16 +1566,16 @@ if __name__ == '__main__':
         fuzzing_content = generate_fuzzing_content(customized_config)
         sim_specific_arguments = initialize_op_specific(fuzzing_arguments)
         run_simulation = run_op_simulation
-    elif fuzzing_arguments.simulator == 'no_simulation':
-        # TBD: Placeholder for this block
-        from no_simulation_script.no_simulation_specific import generate_fuzzing_content, run_no_simulation, initialize_no_simulation_specific
-        from no_simulation_script.no_simulation_objectives_and_bugs import get_unique_bugs, choose_weight_inds, determine_y_upon_weights, get_all_y
 
-        if not fuzzing_arguments.no_simulation_data_path:
-            print('no fuzzing_arguments.no_simulation_data_path is specified. It is set to no_simulation_script/grid.csv')
-            fuzzing_arguments.no_simulation_data_path = 'no_simulation_script/grid.csv'
+    elif fuzzing_arguments.simulator == 'no_simulation_dataset':
+        from no_simulation_dataset_script.no_simulation_specific import generate_fuzzing_content, run_no_simulation, initialize_no_simulation_specific
+        from no_simulation_dataset_script.no_simulation_objectives_and_bugs import get_unique_bugs, choose_weight_inds, determine_y_upon_weights, get_all_y
 
-        fuzzing_arguments.root_folder = 'no_simulation_script/run_results_no_simulation'
+        assert fuzzing_arguments.no_simulation_data_path, 'no fuzzing_arguments.no_simulation_data_path is specified.'
+
+        fuzzing_arguments.root_folder = 'no_simulation_dataset_script/run_results_no_simulation'
+
+
         # These need to be modified to fit one's requirements for objectives
         fuzzing_arguments.objective_weights = np.array([1., 1., 1., -1., 0., 0.])
         fuzzing_arguments.default_objectives = np.array([20., 1, 10, -1, 0, 0])
@@ -1719,7 +1583,7 @@ if __name__ == '__main__':
         scenario_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed', 'ped_delay', 'ped_init_speed']
 
 
-        
+
 
 
         scenario_label_types = ['real']*len(scenario_labels)
@@ -1727,6 +1591,29 @@ if __name__ == '__main__':
         fuzzing_content = generate_fuzzing_content(fuzzing_arguments, scenario_labels, scenario_label_types)
         sim_specific_arguments = initialize_no_simulation_specific(fuzzing_arguments)
         run_simulation = run_no_simulation
+
+    elif fuzzing_arguments.simulator == 'no_simulation_function':
+        from no_simulation_function_script.no_simulation_specific import generate_fuzzing_content, run_no_simulation, initialize_no_simulation_specific
+        from no_simulation_function_script.no_simulation_objectives_and_bugs import get_unique_bugs, choose_weight_inds, determine_y_upon_weights, get_all_y
+
+        fuzzing_arguments.root_folder = 'no_simulation_function_script/run_results_no_simulation'
+
+        # synthetic function
+        fuzzing_arguments.no_simulation_data_path = ''
+        fuzzing_arguments.objective_weights = np.array([1.])
+        fuzzing_arguments.default_objectives = np.array([1.])
+        fuzzing_arguments.objective_labels = ['surrogate_value']
+
+        scenario_labels = ['x1', 'x2']
+        fuzzing_arguments.chosen_labels = ['x1', 'x2']
+        scenario_label_types = ['real']*len(scenario_labels)
+        min_bounds = [-1]*len(scenario_labels)
+        max_bounds = [1]*len(scenario_labels)
+
+        fuzzing_content = generate_fuzzing_content(fuzzing_arguments, scenario_labels, scenario_label_types, min_bounds, max_bounds)
+        sim_specific_arguments = initialize_no_simulation_specific(fuzzing_arguments)
+        run_simulation = run_no_simulation
+
     else:
         raise
     run_ga_general(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simulation)
