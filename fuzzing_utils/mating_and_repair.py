@@ -1,6 +1,10 @@
 from pymoo.model.mating import Mating
 from pymoo.model.repair import Repair
+from pymoo.model.population import Population
 import numpy as np
+import math
+
+from customized_utils import if_violate_constraints_vectorized, is_distinct_vectorized
 
 class MyMatingVectorized(Mating):
     def __init__(self,
