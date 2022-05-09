@@ -3,7 +3,7 @@ import pandas
 import os
 import pickle
 from collections import OrderedDict
-from customized_utils import emptyobject
+from customized_utils import emptyobject, make_hierarchical_dir
 from no_simulation_function_script.synthetic_functions import synthetic_function_dict
 
 def assign_key_value_pairs(search_space_info, fixed_hyperparameters, parameters_min_bounds, parameters_max_bounds):
@@ -61,7 +61,9 @@ def run_no_simulation(x, fuzzing_content, fuzzing_arguments, sim_specific_argume
     'sim_specific_arguments': sim_specific_arguments
     }
 
-    with open(os.path.join(fuzzing_arguments.parent_folder, 'cur_info.pickle'), 'wb') as f_out:
+    make_hierarchical_dir([fuzzing_arguments.parent_folder, str(counter)])
+
+    with open(os.path.join(fuzzing_arguments.parent_folder, str(counter), 'cur_info.pickle'), 'wb') as f_out:
         pickle.dump(run_info, f_out)
 
     return objectives, run_info

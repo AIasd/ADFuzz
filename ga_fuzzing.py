@@ -88,10 +88,10 @@ from pymoo.operators.crossover.simulated_binary_crossover import SimulatedBinary
 
 from pymoo.model.termination import Termination
 from pymoo.util.termination.default import MultiObjectiveDefaultTermination, SingleObjectiveDefaultTermination
-from pymoo.model.repair import Repair
 from pymoo.operators.mixed_variable_operator import MixedVariableMutation, MixedVariableCrossover
 from pymoo.factory import get_crossover, get_mutation, get_termination
-from pymoo.model.mating import Mating
+
+
 from pymoo.model.initialization import Initialization
 from pymoo.model.duplicate import NoDuplicateElimination
 from pymoo.model.survival import Survival
@@ -104,6 +104,7 @@ Configuration.show_compile_hint = False
 from pgd_attack import pgd_attack, train_net, train_regression_net, VanillaDataset
 from acquisition import map_acquisition
 from sampling import MySamplingVectorized, GridSampling, RandomDirectionSampling
+from mating_and_repair import MyMatingVectorized, ClipRepair
 
 from customized_utils import rand_real,  make_hierarchical_dir, exit_handler, is_critical_region, if_violate_constraints, filter_critical_regions, encode_fields, remove_fields_not_changing, get_labels_to_encode, customized_fit, customized_standardize, customized_inverse_standardize, decode_fields, encode_bounds, recover_fields_not_changing, process_X, inverse_process_X, calculate_rep_d, select_batch_max_d_greedy, if_violate_constraints_vectorized, is_distinct_vectorized, eliminate_repetitive_vectorized, get_sorted_subfolders, load_data, get_F, set_general_seed, emptyobject, get_job_results, choose_farthest_offs, torch_subset
 
@@ -408,151 +409,7 @@ def do_emcmc(parents, off, n_gen, objective_weights, default_objectives):
     return Population.merge(parents, off)
 
 
-class MyMatingVectorized(Mating):
-    def __init__(self,
-                 selection,
-                 crossover,
-                 mutation,
-                 use_unique_bugs,
-                 emcmc,
-                 mating_max_iterations,
-                 **kwargs):
 
-        super().__init__(selection, crossover, mutation, **kwargs)
-        self.use_unique_bugs = use_unique_bugs
-        self.mating_max_iterations = mating_max_iterations
-        self.emcmc = emcmc
-
-
-    def do(self, problem, pop, n_offsprings, **kwargs):
-
-        if self.mating_max_iterations >= 5:
-            mating_max_iterations = self.mating_max_iterations // 5
-            n_offsprings_sampling = n_offsprings * 5
-        else:
-            mating_max_iterations = self.mating_max_iterations
-            n_offsprings_sampling = n_offsprings
-
-        # the population object to be used
-        off = pop.new()
-        parents = pop.new()
-
-        # infill counter - counts how often the mating needs to be done to fill up n_offsprings
-        n_infills = 0
-
-        # iterate until enough offsprings are created
-        while len(off) < n_offsprings:
-            n_infills += 1
-            print('n_infills / mating_max_iterations', n_infills, '/', mating_max_iterations, 'len(off)', len(off))
-            # if no new offsprings can be generated within a pre-specified number of generations
-            if n_infills >= mating_max_iterations:
-                break
-
-            # how many offsprings are remaining to be created
-            n_remaining = n_offsprings - len(off)
-
-            # do the mating
-            _off, _parents = self._do(problem, pop, n_offsprings_sampling, **kwargs)
-
-
-            # repair the individuals if necessary - disabled if repair is NoRepair
-            _off_first = self.repair.do(problem, _off, **kwargs)
-
-
-            # Vectorized
-            _off_X = np.array([x.X for x in _off_first])
-            remaining_inds = if_violate_constraints_vectorized(_off_X, problem.customized_constraints, problem.labels, problem.ego_start_position, verbose=False)
-            _off_X = _off_X[remaining_inds]
-
-            _off = _off_first[remaining_inds]
-            _parents = _parents[remaining_inds]
-
-            # Vectorized
-            if self.use_unique_bugs:
-                if len(_off) == 0:
-                    continue
-                elif len(off) > 0 and len(problem.interested_unique_bugs) > 0:
-                    prev_X = np.concatenate([problem.interested_unique_bugs, np.array([x.X for x in off])])
-                elif len(off) > 0:
-                    prev_X = np.array([x.X for x in off])
-                else:
-                    prev_X = problem.interested_unique_bugs
-
-                print('\n', 'MyMating len(prev_X)', len(prev_X), '\n')
-                remaining_inds = is_distinct_vectorized(_off_X, prev_X, problem.mask, problem.xl, problem.xu, problem.p, problem.c, problem.th, verbose=False)
-
-                if len(remaining_inds) == 0:
-                    continue
-
-                _off = _off[remaining_inds]
-                _parents = _parents[remaining_inds]
-                assert len(_parents)==len(_off)
-
-
-
-            # if more offsprings than necessary - truncate them randomly
-            if len(off) + len(_off) > n_offsprings:
-                # IMPORTANT: Interestingly, this makes a difference in performance
-                n_remaining = n_offsprings - len(off)
-                _off = _off[:n_remaining]
-                _parents = _parents[:n_remaining]
-
-
-            # add to the offsprings and increase the mating counter
-            off = Population.merge(off, _off)
-            parents = Population.merge(parents, _parents)
-
-
-
-
-        # assert len(parents)==len(off)
-        print('Mating finds', len(off), 'offsprings after doing', n_infills, '/', mating_max_iterations, 'mating iterations')
-        return off, parents
-
-
-
-    # only to get parents
-    def _do(self, problem, pop, n_offsprings, parents=None, **kwargs):
-
-        # if the parents for the mating are not provided directly - usually selection will be used
-        if parents is None:
-            # how many parents need to be select for the mating - depending on number of offsprings remaining
-            n_select = math.ceil(n_offsprings / self.crossover.n_offsprings)
-            # select the parents for the mating - just an index array
-            parents = self.selection.do(pop, n_select, self.crossover.n_parents, **kwargs)
-            parents_obj = pop[parents].reshape([-1, 1]).squeeze()
-        else:
-            parents_obj = parents
-
-
-        # do the crossover using the parents index and the population - additional data provided if necessary
-        _off = self.crossover.do(problem, pop, parents, **kwargs)
-        # do the mutation on the offsprings created through crossover
-        _off = self.mutation.do(problem, _off, **kwargs)
-
-        return _off, parents_obj
-
-
-# from pymoo.model.selection import Selection
-# class RouletteSelection(Selection):
-#
-#     def _do(self, pop, n_select, n_parents, **kwargs):
-#
-#         prob = []
-#         for p in pop:
-#             prob.append(p.F)
-#         (n_select, prob)
-#
-#         # number of random individuals needed
-#         n_random = n_select * n_parents
-#
-#         # number of permutations needed
-#         n_perms = math.ceil(n_random / len(pop))
-#
-#         # get random permutations and reshape them
-#         P = random_permuations(n_perms, len(pop))[:n_random]
-#
-#         return np.reshape(P, (n_select, n_parents))
 
 
 
@@ -1167,20 +1024,6 @@ class NSGA2_CUSTOMIZED(NSGA2):
         self.pop, self.off = pop, pop
 
 
-
-
-class ClipRepair(Repair):
-    """
-    A dummy class which can be used to simply do no repair.
-    """
-
-    def do(self, problem, pop, **kwargs):
-        for i in range(len(pop)):
-            pop[i].X = np.clip(pop[i].X, np.array(problem.xl), np.array(problem.xu))
-        return pop
-
-
-
 class MyEvaluator(Evaluator):
     def __init__(self, correct_spawn_locations_after_run=0, correct_spawn_locations=None, **kwargs):
         super().__init__()
@@ -1191,10 +1034,6 @@ class MyEvaluator(Evaluator):
         super()._eval(problem, pop, **kwargs)
         if self.correct_spawn_locations_after_run:
             correct_spawn_locations_all(pop[i].X, problem.labels)
-
-
-
-
 
 
 def run_nsga2_dt(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simulation):
@@ -1230,8 +1069,6 @@ def run_nsga2_dt(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run
         X_filtered = np.array(X)[inds]
         F_filtered = F[inds]
 
-
-
     for i in range(fuzzing_arguments.outer_iterations):
         dt_time_str_i = dt_time_str
         dt = True
@@ -1250,7 +1087,6 @@ def run_nsga2_dt(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run
 
 
         X_new, y_new, F_new, _, labels, parent_folder, cumulative_info, all_pop_run_X, objective_list, objective_weights = run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simulation, dt_arguments=dt_arguments)
-
 
 
         if fuzzing_arguments.finish_after_has_run and cumulative_info['has_run'] > fuzzing_arguments.has_run_num:
@@ -1278,7 +1114,6 @@ def run_nsga2_dt(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run
             break
 
 
-
 def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simulation, dt_arguments=None):
 
     if not dt_arguments:
@@ -1304,7 +1139,12 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
         p, c, th = fuzzing_arguments.check_unique_coeff
         time_str = now.strftime("%Y_%m_%d_%H_%M_%S")+','+'_'.join([str(fuzzing_arguments.pop_size), str(fuzzing_arguments.n_gen), fuzzing_arguments.rank_mode, str(fuzzing_arguments.has_run_num), 'coeff', str(p), str(c), str(th), 'only_unique', str(fuzzing_arguments.only_run_unique_cases)])
 
-    cur_parent_folder = make_hierarchical_dir([fuzzing_arguments.root_folder, fuzzing_arguments.algorithm_name, fuzzing_arguments.route_type, fuzzing_arguments.scenario_type, fuzzing_arguments.ego_car_model, time_str])
+    if fuzzing_arguments.simulator == 'no_simulation_function':
+        cur_parent_folder = make_hierarchical_dir([fuzzing_arguments.root_folder, fuzzing_arguments.algorithm_name, fuzzing_arguments.synthetic_function, time_str])
+    elif fuzzing_arguments.simulator == 'no_simulation_dataset':
+        cur_parent_folder = make_hierarchical_dir([fuzzing_arguments.root_folder, fuzzing_arguments.algorithm_name, time_str])
+    else:
+        cur_parent_folder = make_hierarchical_dir([fuzzing_arguments.root_folder, fuzzing_arguments.algorithm_name, fuzzing_arguments.route_type, fuzzing_arguments.scenario_type, fuzzing_arguments.ego_car_model, time_str])
 
     if dt_arguments.call_from_dt:
         parent_folder = make_hierarchical_dir([cur_parent_folder, str(dt_arguments.dt_iter)])
@@ -1414,12 +1254,31 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
     print('We have found', len(problem.bugs), 'bugs in total.')
 
 
+    # save running results summary in a pickle file
+    # print('np.array(problem.x_list).shape', np.array(problem.x_list).shape)
+    # print('np.array(problem.objectives_list).shape', np.array(problem.objectives_list).shape)
+    data_d = {
+        'x_list': np.array(problem.x_list),
+        'objective_list': np.array(problem.objectives_list),
+        'y_list': np.array(problem.y_list),
+        'labels': problem.labels,
+        'xl': problem.xl,
+        'xu': problem.xu,
+        'mask': problem.mask,
+        'parameters_min_bounds': problem.parameters_min_bounds,
+        'parameters_max_bounds': problem.parameters_max_bounds,
+    }
+    with open(os.path.join(fuzzing_arguments.parent_folder, 'data.pickle'), 'wb') as f_out:
+        pickle.dump(data_d, f_out)
+
+    # TBD2: do the same thing for run_nsga2_dt
+
     # additional saving for random_local_sphere
-    if fuzzing_arguments.algorithm_name in ['random_local_sphere']:
-        with open(os.path.join(fuzzing_arguments.parent_folder, 'spheres.pickle'), 'wb') as f_out:
-            print('len(algorithm.sampling.spheres[0].members', len(algorithm.sampling.spheres[0].members))
-            print('len(algorithm.sampling.spheres[1].members', len(algorithm.sampling.spheres[1].members))
-            pickle.dump(algorithm.sampling.spheres, f_out)
+    # if fuzzing_arguments.algorithm_name in ['random_local_sphere']:
+    #     with open(os.path.join(fuzzing_arguments.parent_folder, 'spheres.pickle'), 'wb') as f_out:
+    #         print('len(algorithm.sampling.spheres[0].members', len(algorithm.sampling.spheres[0].members))
+    #         print('len(algorithm.sampling.spheres[1].members', len(algorithm.sampling.spheres[1].members))
+    #         pickle.dump(algorithm.sampling.spheres, f_out)
 
 
     if len(problem.x_list) > 0:
