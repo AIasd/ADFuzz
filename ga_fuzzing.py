@@ -595,44 +595,44 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
         elif self.algorithm_name in ['random', 'grid']:
             self.tmp_off = self.initialization.do(self.problem, self.n_offsprings, algorithm=self)
-        elif self.algorithm_name in ['random_local_sphere']:
-            # print('self.sampling.cur_ind', self.sampling.cur_ind)
-            # if self.sampling.cur_ind > -1:
-            #     print('self.sampling.spheres[self.sampling.cur_ind].sampling_num', self.sampling.spheres[self.sampling.cur_ind].sampling_num)
-            if len(self.sampling.spheres) > 0 and self.sampling.spheres[self.sampling.cur_ind].if_local_sampling():
-                latest_ind, latest_x, latest_y = len(self.problem.x_list)-1, self.problem.x_list[-1], self.problem.y_list[-1]
-                self.sampling.update_cur_sphere(latest_ind, latest_x, latest_y)
-
-            if len(self.sampling.spheres) == 0 or not self.sampling.spheres[self.sampling.cur_ind].if_local_sampling():
-                self.sampling.add_uncovered_coverable_bugs(self.problem.x_list, self.problem.y_list)
-                uncovered_bug = self.sampling.find_an_uncovered_bug(self.problem.x_list, self.problem.y_list)
-                # If an uncovered bug is found by global sampling
-                if uncovered_bug:
-                    self.sampling.new_sphere(uncovered_bug, self.problem.x_list, self.problem.y_list)
-                    tmp_val = self.sampling._do(self.problem, self.n_offsprings)
-                    pop = Population(0, individual=Individual())
-                    self.tmp_off = pop.new("X", tmp_val)
-                # do global sampling when no available bug can be used as a new center
-                else:
-                    offspring_multiplier = 1000
-                    sphere_center_d_th_random_sampling = 0.1
-
-                    tmp_x_list = self.random_sampling._do(self.problem, self.n_offsprings*offspring_multiplier, algorithm=self)
-                    d_list = self.sampling.d_to_spheres(tmp_x_list)
-
-                    candidate_x_list_inds = np.where(d_list > sphere_center_d_th_random_sampling)[0]
-                    if len(candidate_x_list_inds) < self.n_offsprings:
-                        candidate_x_list_inds = np.argsort(d_list)[-self.n_offsprings:]
-                        tmp_val = np.array(tmp_x_list)[candidate_x_list_inds]
-                    else:
-                        tmp_val = np.random.choice(candidate_x_list_inds, size=self.n_offsprings, replace=False)
-                        tmp_val = np.array(tmp_x_list)[candidate_x_list_inds]
-                    pop = Population(0, individual=Individual())
-                    self.tmp_off = pop.new("X", tmp_val)
-            else:
-                tmp_val = self.sampling._do(self.problem, self.n_offsprings)
-                pop = Population(0, individual=Individual())
-                self.tmp_off = pop.new("X", tmp_val)
+        # elif self.algorithm_name in ['random_local_sphere']:
+        #     # print('self.sampling.cur_ind', self.sampling.cur_ind)
+        #     # if self.sampling.cur_ind > -1:
+        #     #     print('self.sampling.spheres[self.sampling.cur_ind].sampling_num', self.sampling.spheres[self.sampling.cur_ind].sampling_num)
+        #     if len(self.sampling.spheres) > 0 and self.sampling.spheres[self.sampling.cur_ind].if_local_sampling():
+        #         latest_ind, latest_x, latest_y = len(self.problem.x_list)-1, self.problem.x_list[-1], self.problem.y_list[-1]
+        #         self.sampling.update_cur_sphere(latest_ind, latest_x, latest_y)
+        #
+        #     if len(self.sampling.spheres) == 0 or not self.sampling.spheres[self.sampling.cur_ind].if_local_sampling():
+        #         self.sampling.add_uncovered_coverable_bugs(self.problem.x_list, self.problem.y_list)
+        #         uncovered_bug = self.sampling.find_an_uncovered_bug(self.problem.x_list, self.problem.y_list)
+        #         # If an uncovered bug is found by global sampling
+        #         if uncovered_bug:
+        #             self.sampling.new_sphere(uncovered_bug, self.problem.x_list, self.problem.y_list)
+        #             tmp_val = self.sampling._do(self.problem, self.n_offsprings)
+        #             pop = Population(0, individual=Individual())
+        #             self.tmp_off = pop.new("X", tmp_val)
+        #         # do global sampling when no available bug can be used as a new center
+        #         else:
+        #             offspring_multiplier = 1000
+        #             sphere_center_d_th_random_sampling = 0.1
+        #
+        #             tmp_x_list = self.random_sampling._do(self.problem, self.n_offsprings*offspring_multiplier, algorithm=self)
+        #             d_list = self.sampling.d_to_spheres(tmp_x_list)
+        #
+        #             candidate_x_list_inds = np.where(d_list > sphere_center_d_th_random_sampling)[0]
+        #             if len(candidate_x_list_inds) < self.n_offsprings:
+        #                 candidate_x_list_inds = np.argsort(d_list)[-self.n_offsprings:]
+        #                 tmp_val = np.array(tmp_x_list)[candidate_x_list_inds]
+        #             else:
+        #                 tmp_val = np.random.choice(candidate_x_list_inds, size=self.n_offsprings, replace=False)
+        #                 tmp_val = np.array(tmp_x_list)[candidate_x_list_inds]
+        #             pop = Population(0, individual=Individual())
+        #             self.tmp_off = pop.new("X", tmp_val)
+        #     else:
+        #         tmp_val = self.sampling._do(self.problem, self.n_offsprings)
+        #         pop = Population(0, individual=Individual())
+        #         self.tmp_off = pop.new("X", tmp_val)
 
         else:
             if self.algorithm_name == 'random-un':
@@ -687,10 +687,10 @@ class NSGA2_CUSTOMIZED(NSGA2):
 
         # additional step to rank and select self.off after gathering initial population
         no_ranking = self.rank_mode == 'none'
-        cla_nn_ranking_and_no_enough_samples = self.rank_mode in ['nn', 'adv_nn'] and (len(self.problem.objectives_list) < self.initial_fit_th or  np.sum(determine_y_upon_weights(self.problem.objectives_list, self.problem.objective_weights)) < self.min_bug_num_to_fit_dnn)
+        cla_nn_ranking_and_no_enough_samples_or_no_enough_bugs = self.rank_mode in ['nn', 'adv_nn'] and (len(self.problem.objectives_list) < self.initial_fit_th or  np.sum(determine_y_upon_weights(self.problem.objectives_list, self.problem.objective_weights)) < self.min_bug_num_to_fit_dnn)
         reg_ranking_and_no_enough_samples = self.rank_mode in ['regression_nn'] and len(self.problem.objectives_list) < self.pop_size
 
-        if no_ranking or cla_nn_ranking_and_no_enough_samples or reg_ranking_and_no_enough_samples:
+        if no_ranking or cla_nn_ranking_and_no_enough_samples_or_no_enough_bugs or reg_ranking_and_no_enough_samples:
             self.off = self.tmp_off[:self.pop_size]
         else:
             if self.rank_mode in ['regression_nn']:

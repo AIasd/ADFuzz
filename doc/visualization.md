@@ -35,7 +35,7 @@ python analysis_utils/visualize.py
 ```
 
 The resulted figure is saved in the `folder_path`. The generated figure is shown below:
-![plain_2_500_ga_four_modes](doc/figures/plain_2_500_ga_four_modes.jpg)
+![plain_2_500_ga_four_modes](figures/plain_2_500_ga_four_modes.jpg)
 
 
 ## Example 2 - CARLA + LBC
@@ -46,7 +46,7 @@ The stack [CARLA0.9.9+LBC](https://github.com/AIasd/ADFuzz/blob/main/doc/stack1_
 The search space is a logical space about a pedestrian crossing the street starting from a point within a square region of the an intersection. The ego car is passing through the intersection.
 
 The scenario looks like the following:
-![lbc_crossing_scenario](doc/figures/lbc_crossing_scenario.jpg)
+![lbc_crossing_scenario](figures/lbc_crossing_scenario.jpg)
 
 The search space is:
 ```
@@ -71,7 +71,7 @@ python analysis_utils/visualize.py
 
 The result is shown below:
 
-![plain_4_500_ga_lbc](doc/figures/plain_4_500_ga_lbc.jpg)
+![plain_4_500_ga_lbc](figures/plain_4_500_ga_lbc.jpg)
 
 
 #### AutoFuzz
@@ -88,4 +88,4 @@ python analysis_utils/visualize.py
 
 The result is shown below:
 
-![plain_4_500_autofuzz_lbc](doc/figures/plain_4_500_autofuzz_lbc.jpg)
+![plain_4_500_autofuzz_lbc](figures/plain_4_500_autofuzz_lbc.jpg)
