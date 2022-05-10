@@ -10,6 +10,11 @@ import seaborn as sns
 sns.set_theme()
 
 
+# TBD: visualize synthetic function bug distribution (2d)
+def visualize_synthetic_function_bugs():
+    pass
+
+# -------------------- helper functions for visualize_data --------------------
 def plot_arrow(ax, values, label, color, legend=False, width=0.001, head_width=0.01):
     if len(values) == 2:
         x, y = values
@@ -38,10 +43,26 @@ def plot_arrow(ax, values, label, color, legend=False, width=0.001, head_width=0
         else:
             ax.arrow(x, y, dx, dy, color=color, head_width=head_width, alpha=0.5, width=width)
 
-    # ax.set_ylim(-11, 11)
-    # ax.set_xlim(11, -11)
+    ax.set_ylim(-0.1, 1.1)
+    ax.set_xlim(-0.1, 1.1)
 
-# plain
+def plot_subplot(ax, x_list, y_list, left, right, unique_y_list, legend):
+    x_sublist = x_list[left:right]
+    y_sublist = y_list[left:right]
+    colors = ['black', 'red', 'gray', 'lightgray', 'brown', 'salmon', 'orange', 'yellowgreen', 'green', 'blue', 'purple', 'magenta', 'pink']
+    for j, y in enumerate(unique_y_list):
+        color = colors[j]
+        x_subset = x_sublist[y_sublist==y]
+        for k in range(x_subset.shape[0]):
+            if legend and k == 0:
+                plot_arrow(ax, x_subset[k], y, color, legend=True)
+            else:
+                plot_arrow(ax, x_subset[k], y, color, legend=False)
+    ax.set_title('samples '+str(left)+' to '+str(right), fontsize=20)
+    if legend:
+        ax.legend(loc='lower right', prop={'size': 16}, fancybox=True, framealpha=0.5)
+# -------------------- helper functions for visualize_data --------------------
+
 def visualize_data(folder_path, num_subplots, mode, dim, chosen_labels):
     data_path = os.path.join(folder_path, 'data.pickle')
     with open(data_path, 'rb') as f_in:
@@ -98,44 +119,41 @@ def visualize_data(folder_path, num_subplots, mode, dim, chosen_labels):
     print('x_list.shape', x_list.shape)
     print('y_list.shape', y_list.shape)
 
-    colors = ['black', 'pink', 'gray', 'lightgray', 'brown', 'red', 'salmon', 'orange', 'yellowgreen', 'green', 'blue', 'purple', 'magenta']
+    x_list = x_list[:, inds_list]
 
     unique_y_list = np.unique(y_list)
     num_per_subplot = int(np.ceil(len(y_list) / num_subplots))
 
-    num_subplots_row_num = int(np.ceil(np.sqrt(num_subplots)))
-    num_subplots_col_num = int(np.ceil(num_subplots / num_subplots_row_num))
+    num_subplots_col_num = int(np.ceil(np.sqrt(num_subplots)))
+    num_subplots_row_num = int(np.ceil(num_subplots / num_subplots_col_num))
 
-    fig, axs = plt.subplots(num_subplots_col_num, num_subplots_row_num, figsize=(num_subplots_row_num*5, num_subplots_col_num*5))
+    # for the overall plot at the first row
+    num_subplots_col_num += 1
+
+    fig, axs = plt.subplots(num_subplots_row_num, num_subplots_col_num, figsize=(num_subplots_col_num*5, num_subplots_row_num*5))
+
+
+    plot_subplot(axs[0, 0], x_list, y_list, 0, x_list.shape[0], unique_y_list, legend=True)
+
+    # remove empty subplots at the rest of the first row
+    for i in range(1, num_subplots_col_num):
+        axs[0, i].remove()
 
     for i in range(num_subplots):
-        cur_row = i // num_subplots_row_num
-        cur_col = i % num_subplots_row_num
+        cur_row = (i // num_subplots_col_num)+1
+        cur_col = i % num_subplots_col_num
         ax = axs[cur_row, cur_col]
 
         left, right = i*num_per_subplot, (i+1)*num_per_subplot
         if i == num_subplots-1:
             right = x_list.shape[0]
+        plot_subplot(ax, x_list, y_list, left, right, unique_y_list, legend=False)
 
-        x_sublist = x_list[left:right]
-        y_sublist = y_list[left:right]
+    # remove empty subplots in the end
+    axs = axs.flat
+    for i in range(num_subplots+num_subplots_col_num, len(axs)):
+        axs[i].remove()
 
-        for j, y in enumerate(unique_y_list):
-            color = colors[j]
-            x_subset = x_sublist[y_sublist==y]
-            x_subset = x_subset[:, inds_list]
-            print('left', left, 'right', right, 'y', y, 'x_subset.shape', x_subset.shape)
-
-            for k in range(x_subset.shape[0]):
-                if i == num_subplots-1 and k == 0:
-                    plot_arrow(ax, x_subset[k], y, color, legend=True)
-                else:
-                    plot_arrow(ax, x_subset[k], y, color, legend=False)
-
-            # ax.scatter(x_subset[:, ind_0], x_subset[:, ind_1], s=10, c=color, label=str(y))
-        ax.set_title('samples '+str(left)+' to '+str(right), fontsize=20)
-        if i == num_subplots-1:
-            ax.legend(loc='lower right', prop={'size': 16}, fancybox=True, framealpha=0.5)
     fig.suptitle(mode+' with '+str(dim)+' dimensions for '+str(x_list.shape[0])+' samples', fontsize=30)
     fig.savefig(os.path.join(folder_path, mode+'_'+str(dim)+'_'+str(x_list.shape[0])+'.jpg'))
 
@@ -143,7 +161,9 @@ def visualize_data(folder_path, num_subplots, mode, dim, chosen_labels):
 if __name__ == '__main__':
     # The folder consists of the fuzzing data
     folder_path = 'no_simulation_function_script/run_results_no_simulation/nsga2/four_modes/2022_05_09_18_03_17,50_10_none_500_coeff_0_0.1_0.5_only_unique_0'
-    # folder_path = 'carla_lbc/run_results/nsga2-un/town07_front_0/go_straight_town07_one_ped/lbc/2022_05_09_15_25_27,10_2_none_20_coeff_0.0_0.1_0.5_only_unique_1'
+    # folder_path = 'carla_lbc/run_results/nsga2/town07_front_0/go_straight_town07_one_ped/lbc/2022_05_09_23_07_38,50_10_none_500_coeff_0.0_0.1_0.5_only_unique_0'
+
+    # folder_path = 'carla_lbc/run_results/nsga2-un/town07_front_0/go_straight_town07_one_ped/lbc/2022_05_09_23_42_33,50_10_adv_nn_500_coeff_0.0_0.1_0.5_only_unique_1'
 
     # The number of subsets to split all the data during fuzzing. It needs to be an integer and less than or equal to (usually far less than) the number of data points.
     num_subplots = 10
