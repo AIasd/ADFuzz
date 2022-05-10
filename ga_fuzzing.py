@@ -1050,7 +1050,6 @@ def run_nsga2_dt(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run
     estimator = None
     critical_unique_leaves = None
 
-
     now = datetime.now()
     dt_time_str = now.strftime("%Y_%m_%d_%H_%M_%S")
 
@@ -1104,7 +1103,6 @@ def run_nsga2_dt(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run
             y = np.concatenate([y, y_new])
             F = np.concatenate([F, F_new])
 
-
         estimator, inds, critical_unique_leaves = filter_critical_regions(X, y)
         # print(X, F, inds)
         X_filtered = X[inds]
@@ -1112,6 +1110,26 @@ def run_nsga2_dt(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run
 
         if len(X_filtered) == 0 and end_when_no_critical_region:
             break
+
+    # save running results summary in a pickle file
+    x_list_all = []
+    y_list_all = []
+    objective_list_all = []
+    for i in range(fuzzing_arguments.outer_iterations):
+        with open(os.path.join(fuzzing_arguments.parent_folder, i, 'data.pickle'), 'rb') as f_in:
+            data_d = pickle.load(f_in)
+            x_list = data_d['x_list']
+            y_list = data_d['y_list']
+            objective_list = data_d['objective_list']
+
+            x_list_all.append(x_list)
+            y_list_all.append(y_list)
+            objective_list_all.append(objective_list)
+    data_d['x_list'] = np.concatenate(x_list_all)
+    data_d['y_list'] = np.concatenate(y_list_all)
+    data_d['objective_list'] = np.concatenate(objective_list_all)
+    with open(os.path.join(fuzzing_arguments.parent_folder, 'data.pickle'), 'wb') as f_out:
+        pickle.dump(data_d, f_out)
 
 
 def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simulation, dt_arguments=None):
@@ -1261,17 +1279,15 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
         'x_list': np.array(problem.x_list),
         'objective_list': np.array(problem.objectives_list),
         'y_list': np.array(problem.y_list),
-        'labels': problem.labels,
-        'xl': problem.xl,
-        'xu': problem.xu,
-        'mask': problem.mask,
+        'labels': np.array(problem.labels),
+        'xl': np.array(problem.xl),
+        'xu': np.array(problem.xu),
+        'mask': np.array(problem.mask),
         'parameters_min_bounds': problem.parameters_min_bounds,
         'parameters_max_bounds': problem.parameters_max_bounds,
     }
     with open(os.path.join(fuzzing_arguments.parent_folder, 'data.pickle'), 'wb') as f_out:
         pickle.dump(data_d, f_out)
-
-    # TBD2: do the same thing for run_nsga2_dt
 
     # additional saving for random_local_sphere
     # if fuzzing_arguments.algorithm_name in ['random_local_sphere']:
@@ -1279,7 +1295,6 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
     #         print('len(algorithm.sampling.spheres[0].members', len(algorithm.sampling.spheres[0].members))
     #         print('len(algorithm.sampling.spheres[1].members', len(algorithm.sampling.spheres[1].members))
     #         pickle.dump(algorithm.sampling.spheres, f_out)
-
 
     if len(problem.x_list) > 0:
         X = np.stack(problem.x_list)
@@ -1306,7 +1321,6 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
     th = problem.th
 
 
-
     cumulative_info = {
         'has_run': problem.has_run,
         'start_time': problem.start_time,
@@ -1321,7 +1335,6 @@ def run_ga(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simul
         'unique_bugs_num_list': problem.unique_bugs_num_list,
         'has_run_list': problem.has_run_list
     }
-
 
     return X, y, F, objectives, labels, cur_parent_folder, cumulative_info, algorithm.all_pop_run_X, problem.objectives_list, problem.objective_weights
 
@@ -1371,13 +1384,10 @@ if __name__ == '__main__':
         run_simulation = run_carla_simulation
 
 
-
-
     elif fuzzing_arguments.simulator == 'svl':
         from svl_script.scene_configs import customized_bounds_and_distributions
         from svl_script.setup_labels_and_bounds import generate_fuzzing_content
         from svl_script.svl_specific import run_svl_simulation, initialize_svl_specific, get_unique_bugs, choose_weight_inds, determine_y_upon_weights, get_all_y
-
 
 
         assert fuzzing_arguments.ego_car_model in ['apollo_6_with_signal', 'apollo_6_modular', 'apollo_6_modular_2gt', 'apollo_6']
@@ -1457,17 +1467,23 @@ if __name__ == '__main__':
 
         fuzzing_arguments.root_folder = 'no_simulation_function_script/run_results_no_simulation'
 
-        # synthetic function
         fuzzing_arguments.no_simulation_data_path = ''
+
+        # These fields need to be set to be consistent with the synthetic_function used
         fuzzing_arguments.objective_weights = np.array([1.])
         fuzzing_arguments.default_objectives = np.array([1.])
         fuzzing_arguments.objective_labels = ['surrogate_value']
 
         scenario_labels = ['x1', 'x2']
-        fuzzing_arguments.chosen_labels = ['x1', 'x2']
         scenario_label_types = ['real']*len(scenario_labels)
         min_bounds = [-1]*len(scenario_labels)
         max_bounds = [1]*len(scenario_labels)
+
+        # synthetic function needs to be specified
+        assert fuzzing_arguments.synthetic_function
+
+        # used only when algorithm_name == 'random_local_sphere'
+        # fuzzing_arguments.chosen_labels = ['x1', 'x2']
 
         fuzzing_content = generate_fuzzing_content(fuzzing_arguments, scenario_labels, scenario_label_types, min_bounds, max_bounds)
         sim_specific_arguments = initialize_no_simulation_specific(fuzzing_arguments)

@@ -26,8 +26,11 @@ def himmelblau(x):
 def rectangle(x):
     from scipy.stats import multivariate_normal
     f = multivariate_normal.pdf(x[:1], mean=(0), cov=0.05*np.eye(1))
-
-    # print('x', x, 'f', f)
     return [f]
 
-synthetic_function_dict = {'four_modes': four_modes, 'four_modes_gmm': four_modes_gmm, 'himmelblau': himmelblau, 'rectangle': rectangle}
+def customized(x):
+    # f represents the result/objectives, it is 1 by m dimensional, where m is the number of objectives
+    f = [0]
+    return f
+
+synthetic_function_dict = {'four_modes': four_modes, 'four_modes_gmm': four_modes_gmm, 'himmelblau': himmelblau, 'rectangle': rectangle, 'customized': customized}

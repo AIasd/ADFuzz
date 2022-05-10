@@ -59,7 +59,7 @@ customized_bounds_and_distributions = {
             "pedestrian_y_max_0": 12,
             "pedestrian_yaw_min_0": 0,
             "pedestrian_yaw_max_0": 360,
-            "pedestrian_speed_min_0": 3,
+            "pedestrian_speed_min_0": 0,
             "pedestrian_speed_max_0": 3,
             "pedestrian_trigger_distance_min_0": 20,
             "pedestrian_trigger_distance_max_0": 20,
