@@ -137,7 +137,7 @@ def visualize_data(folder_path, num_subplots, mode, dim, chosen_labels):
         if i == num_subplots-1:
             ax.legend(loc='lower right', prop={'size': 16}, fancybox=True, framealpha=0.5)
     fig.suptitle(mode+' with '+str(dim)+' dimensions for '+str(x_list.shape[0])+' samples', fontsize=30)
-    fig.savefig(os.path.join(folder_path, mode+'_'+str(dim)+'_'+str(x_list.shape[0])+'.png'))
+    fig.savefig(os.path.join(folder_path, mode+'_'+str(dim)+'_'+str(x_list.shape[0])+'.jpg'))
 
 
 if __name__ == '__main__':
