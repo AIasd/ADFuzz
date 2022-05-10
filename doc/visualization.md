@@ -25,4 +25,4 @@ python analysis_utils/visualize.py
 ```
 
 The resulted figure is saved in the `folder_path`. The generated figure is shown below:
-![plain_2_500_ga](doc/figures/plain_2_500_ga.jpg)
+![plain_2_500_ga](figures/plain_2_500_ga.jpg)
