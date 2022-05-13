@@ -149,6 +149,8 @@ def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mod
     if num_subplots == 1:
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
         plot_subplot(ax, x_list, y_list, 0, x_list.shape[0], unique_y_list, legend=True)
+        ax.set_xlabel(chosen_labels[0])
+        ax.set_ylabel(chosen_labels[1])
     else:
         fig, axs = plt.subplots(num_subplots_row_num, num_subplots_col_num, figsize=(num_subplots_col_num*5, num_subplots_row_num*5))
         plot_subplot(axs[0, 0], x_list, y_list, 0, x_list.shape[0], unique_y_list, legend=True)
