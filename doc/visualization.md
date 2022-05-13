@@ -8,6 +8,15 @@ A dataset in csv format. In this example, we use `no_simulation_dataset_script/g
 #### Dataset Visualization Parameters
 Set `folder_path`, `file_name`, `x_labels`, `y_label`, and visualization parameters at the end of `analysis_utils/visualize.py` based on their corresponding comments.
 
+In the current example:
+
+```
+folder_path = 'no_simulation_dataset_script'
+file_name = 'grid.csv'
+x_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed', 'ped_delay', 'ped_init_speed']
+y_label = 'oob'
+```
+
 #### Common Parameters
 ```
 num_subplots = 1
