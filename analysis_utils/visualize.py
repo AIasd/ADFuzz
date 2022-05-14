@@ -153,7 +153,7 @@ def extract_data_from_csv(folder_path, filename, x_labels, y_label):
 
 
 # -------------------- helper functions for visualize_data --------------------
-def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels, plot_dim, interactive_mode):
+def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels, plot_dim):
     # normalize the data first
     from sklearn.preprocessing import MinMaxScaler
     transformer = MinMaxScaler().fit(x_list)
@@ -234,21 +234,18 @@ def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mod
 
         fig.suptitle(mode+' with '+str(dim)+' dimensions for '+str(x_list.shape[0])+' samples', fontsize=30)
 
-    if interactive_mode:
-        plt.show()
-    else:
-        fig.savefig(os.path.join(save_folder_path, mode+'_'+str(dim)+'_'+str(x_list.shape[0])+'.jpg'))
+    fig.savefig(os.path.join(save_folder_path, mode+'_'+str(dim)+'_'+str(x_list.shape[0])+'.jpg'))
 
 
 if __name__ == '__main__':
     # -------------------- Dataset Visualization Parameters--------------------
     folder_path = 'no_simulation_dataset_script'
-    file_name = 'grid.csv'
+    filename = 'grid.csv'
     # The values with these labels will be extracted
     x_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed', 'ped_delay', 'ped_init_speed']
     # The interested target's label
     y_label = 'oob'
-    x_list, y_list, x_labels = extract_data_from_csv(folder_path, file_name, x_labels, y_label)
+    x_list, y_list, x_labels = extract_data_from_csv(folder_path, filename, x_labels, y_label)
 
 
     # -------------------- Fuzzing + Visualization Parameters --------------------
@@ -274,7 +271,5 @@ if __name__ == '__main__':
     # The dimensionality for plotting. [2, 3]. Note if plot_dim == 3, currently only dim == 3 is supported.
     plot_dim = 3
 
-    # If pop up the interactive figure window. [False, True]. If True, the figure will not be saved automatically. This can be useful when plot_dim == 3 where this mode enables one to change viewing angle of the figure by draging the figure around.
-    interactive_mode = False
 
-    visualize_data(folder_path, x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels, plot_dim, interactive_mode)
+    visualize_data(folder_path, x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels, plot_dim)
