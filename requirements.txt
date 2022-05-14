@@ -265,3 +265,5 @@ yarl==1.6.3
 zict==2.0.0
 zmq==0.0.0
 pycurl==7.43.0.6
+ipympl==0.9.1
+plotly==5.8.0

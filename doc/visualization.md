@@ -157,3 +157,34 @@ python analysis_utils/visualize.py
 The result is shown below:
 
 <img src="figures/plain_4_500_autofuzz_lbc.jpg" width="100%" height="100%"/>
+
+
+## Interactive Jupyter Notebook Plotter
+Run
+```
+jupyter notebook
+```
+Open the file `visualize.ipynb`, adjust folder_path, filename, and parameters (same as above) according to one's need, and run it.
+
+
+## Plotly 3D Plot Local
+Adjust folder_path, filename, and field_label_pairs according to one's need in `3d_scatter_plot.py`.
+
+In the current example, we visualize 5 x features and 1 y feature. The keys correspond to what aspect in the plot correspond to each selected feature.
+```
+field_label_pairs = {
+'x': 'ego_pos',
+'y': 'ego_init_speed',
+'z': 'other_pos',
+'color': 'oob',
+'size': 'other_init_speed',
+'symbol': 'ped_delay'
+}
+```
+
+Then, run
+```
+python 3d_scatter_plot.py
+```
+
+Open a browser and get to `localhost:9050`.
