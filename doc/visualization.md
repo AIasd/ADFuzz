@@ -18,11 +18,26 @@ y_label = 'oob'
 ```
 
 #### Common Parameters
+For 2D,
+
 ```
 num_subplots = 1
 mode = 'plain'
 dim = 4
 chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed']
+plot_dim = 2
+interactive_mode = False
+```
+
+For 3D,
+
+```
+num_subplots = 1
+mode = 'plain'
+dim = 3
+chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos']
+plot_dim = 3
+interactive_mode = False
 ```
 
 ### Commands
@@ -31,10 +46,13 @@ Then, run
 python analysis_utils/visualize.py
 ```
 
-The result is shown below:
+The result (2D) is shown below:
 
 <img src="figures/plain_4_17280_dataset_airsim.jpg" width="50%" height="50%"/>
 
+The result (3D) is shown below:
+
+<img src="figures/plain_3_17280_dataset_airsim_3d.jpg" width="50%" height="50%"/>
 
 ## Fuzzing + Visualization - No Simulation (Function)
 ### Oracle
@@ -57,6 +75,8 @@ num_subplots = 10
 mode = 'plain'
 dim = 2
 chosen_labels = ['x1', 'x2']
+plot_dim = 2
+interactive_mode = False
 ```
 
 ### Commands
@@ -104,6 +124,8 @@ num_subplots = 10
 mode = 'plain'
 dim = 4
 chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed']
+plot_dim = 2
+interactive_mode = False
 ```
 
 ### Commands

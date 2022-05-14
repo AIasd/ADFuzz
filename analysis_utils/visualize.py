@@ -10,12 +10,55 @@ import seaborn as sns
 sns.set_theme()
 
 
+
+
+
 # TBD: visualize synthetic function bug distribution (2d)
 def visualize_synthetic_function_bugs():
     pass
 
 # -------------------- helper functions for visualize_data --------------------
-def plot_arrow(ax, values, label, color, legend=False, width=0.001, head_width=0.01):
+from mpl_toolkits.mplot3d.proj3d import proj_transform
+from mpl_toolkits.mplot3d.axes3d import Axes3D
+from matplotlib.patches import FancyArrowPatch
+class Arrow3D(FancyArrowPatch):
+
+    def __init__(self, x, y, z, dx, dy, dz, *args, **kwargs):
+        super().__init__((0, 0), (0, 0), *args, **kwargs)
+        self._xyz = (x, y, z)
+        self._dxdydz = (dx, dy, dz)
+
+    def draw(self, renderer):
+        x1, y1, z1 = self._xyz
+        dx, dy, dz = self._dxdydz
+        x2, y2, z2 = (x1 + dx, y1 + dy, z1 + dz)
+
+        xs, ys, zs = proj_transform((x1, x2), (y1, y2), (z1, z2), self.axes.M)
+        self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
+        super().draw(renderer)
+
+    def do_3d_projection(self, renderer=None):
+        x1, y1, z1 = self._xyz
+        dx, dy, dz = self._dxdydz
+        x2, y2, z2 = (x1 + dx, y1 + dy, z1 + dz)
+
+        xs, ys, zs = proj_transform((x1, x2), (y1, y2), (z1, z2), self.axes.M)
+        self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
+
+        return np.min(zs)
+
+def _arrow3D(ax, x, y, z, dx, dy, dz, *args, **kwargs):
+    '''Add an 3d arrow to an `Axes3D` instance.'''
+
+    arrow = Arrow3D(x, y, z, dx, dy, dz, *args, **kwargs)
+    ax.add_artist(arrow)
+
+setattr(Axes3D, 'arrow3D', _arrow3D)
+
+
+
+
+def plot_arrow(ax, values, label, color, plot_dim, legend=False, width=0.001, head_width=0.01):
     if len(values) == 2:
         x, y = values
         yaw = 0
@@ -32,21 +75,31 @@ def plot_arrow(ax, values, label, color, legend=False, width=0.001, head_width=0
         else:
             x, y, yaw, length = values
 
-        # since yaw will be represented by orientation, its value range is different from others
-        yaw = yaw * 360
-        yaw = np.deg2rad(yaw)
+        if plot_dim == 2:
+            # since yaw will be represented by orientation, its value range is different from others
+            yaw = yaw * 360
+            yaw = np.deg2rad(yaw)
 
-        dx = np.cos(yaw)*length*0.1
-        dy = np.sin(yaw)*length*0.1
+            dx = np.cos(yaw)*length*0.1
+            dy = np.sin(yaw)*length*0.1
+
         if legend:
-            ax.arrow(x, y, dx, dy, color=color, head_width=head_width, alpha=0.5, width=width, label=str(label))
+            label = str(label)
         else:
-            ax.arrow(x, y, dx, dy, color=color, head_width=head_width, alpha=0.5, width=width)
+            label = None
+
+        if plot_dim == 2:
+            ax.arrow(x, y, dx, dy, color=color, head_width=head_width, alpha=0.5, width=width, label=label)
+        elif plot_dim == 3:
+            # ax.arrow3D(x,y,0.5, x+dx,y+dy,0.7, mutation_scale=20, arrowstyle="-|>", linestyle='dashed', color=color, label=label)
+            ax.scatter(x, y, yaw, color=color, label=label)
 
     ax.set_ylim(-0.1, 1.1)
     ax.set_xlim(-0.1, 1.1)
+    if plot_dim == 3:
+        ax.set_zlim(-0.1, 1.1)
 
-def plot_subplot(ax, x_list, y_list, left, right, unique_y_list, legend):
+def plot_subplot(ax, x_list, y_list, left, right, unique_y_list, legend, mode, chosen_labels, plot_dim):
     x_sublist = x_list[left:right]
     y_sublist = y_list[left:right]
     colors = ['black', 'red', 'gray', 'lightgray', 'brown', 'salmon', 'orange', 'yellowgreen', 'green', 'blue', 'purple', 'magenta', 'pink']
@@ -55,12 +108,17 @@ def plot_subplot(ax, x_list, y_list, left, right, unique_y_list, legend):
         x_subset = x_sublist[y_sublist==y]
         for k in range(x_subset.shape[0]):
             if legend and k == 0:
-                plot_arrow(ax, x_subset[k], y, color, legend=True)
+                plot_arrow(ax, x_subset[k], y, color, plot_dim, legend=True)
             else:
-                plot_arrow(ax, x_subset[k], y, color, legend=False)
+                plot_arrow(ax, x_subset[k], y, color, plot_dim, legend=False)
     ax.set_title('samples '+str(left)+' to '+str(right), fontsize=20)
     if legend:
         ax.legend(loc='lower right', prop={'size': 16}, fancybox=True, framealpha=0.5)
+    if mode == 'plain':
+        ax.set_xlabel(chosen_labels[0])
+        ax.set_ylabel(chosen_labels[1])
+        if plot_dim == 3:
+            ax.set_zlabel(chosen_labels[2])
 
 # extract data from result folder
 def extract_data_from_fuzzing(folder_path):
@@ -95,7 +153,7 @@ def extract_data_from_csv(folder_path, filename, x_labels, y_label):
 
 
 # -------------------- helper functions for visualize_data --------------------
-def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels):
+def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels, plot_dim, interactive_mode):
     # normalize the data first
     from sklearn.preprocessing import MinMaxScaler
     transformer = MinMaxScaler().fit(x_list)
@@ -103,6 +161,8 @@ def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mod
 
     assert num_subplots >= 1
     assert x_list.shape[0] >= num_subplots
+    if plot_dim == 3:
+        assert dim == plot_dim
 
     if mode == 'plain':
         assert len(chosen_labels) == dim
@@ -122,7 +182,10 @@ def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mod
             x_list = pca.transform(x_list)
             inds_list = [i for i in range(dim)]
         elif mode == 'tsne':
-            assert dim == 2
+            if plot_dim == 2:
+                assert dim == 2
+            elif plot_dim == 3:
+                assert dim == 3
             from sklearn.manifold import TSNE
             print('x_list.shape', x_list.shape)
             x_list = TSNE(n_components=dim).fit_transform(x_list)
@@ -142,46 +205,42 @@ def visualize_data(save_folder_path, x_list, y_list, x_labels, num_subplots, mod
 
     num_subplots_col_num = int(np.ceil(np.sqrt(num_subplots)))
     num_subplots_row_num = int(np.ceil(num_subplots / num_subplots_col_num))
-    # for the overall plot at the first row
-    num_subplots_row_num += 1
 
+    if num_subplots > 1:
+        # for the overall plot at the first row
+        num_subplots_row_num += 1
 
-    if num_subplots == 1:
-        fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-        plot_subplot(ax, x_list, y_list, 0, x_list.shape[0], unique_y_list, legend=True)
-        ax.set_xlabel(chosen_labels[0])
-        ax.set_ylabel(chosen_labels[1])
+    if plot_dim == 2:
+        projection = None
     else:
-        fig, axs = plt.subplots(num_subplots_row_num, num_subplots_col_num, figsize=(num_subplots_col_num*5, num_subplots_row_num*5))
-        plot_subplot(axs[0, 0], x_list, y_list, 0, x_list.shape[0], unique_y_list, legend=True)
+        projection = '3d'
 
-        # remove empty subplots at the rest of the first row
-        for i in range(1, num_subplots_col_num):
-            axs[0, i].remove()
 
+    fig = plt.figure(figsize=(num_subplots_col_num*5, num_subplots_row_num*5))
+
+    # draw an overall plot
+    ax = fig.add_subplot(num_subplots_col_num, num_subplots_row_num, 1, projection=projection)
+    plot_subplot(ax, x_list, y_list, 0, x_list.shape[0], unique_y_list, True, mode, chosen_labels, plot_dim)
+
+    # draw subplots
+    if num_subplots > 1:
         for i in range(num_subplots):
-            cur_row = (i // num_subplots_col_num)+1
-            cur_col = i % num_subplots_col_num
-            ax = axs[cur_row, cur_col]
+            ax = fig.add_subplot(num_subplots_col_num, num_subplots_row_num, i+num_subplots_col_num+1, projection=projection)
 
             left, right = i*num_per_subplot, (i+1)*num_per_subplot
             if i == num_subplots-1:
                 right = x_list.shape[0]
-            plot_subplot(ax, x_list, y_list, left, right, unique_y_list, legend=False)
+            plot_subplot(ax, x_list, y_list, left, right, unique_y_list, False, mode, chosen_labels, plot_dim)
 
-        # remove empty subplots in the end
-        axs = axs.flat
-        for i in range(num_subplots+num_subplots_col_num, len(axs)):
-            axs[i].remove()
-
-    if num_subplots > 1:
         fig.suptitle(mode+' with '+str(dim)+' dimensions for '+str(x_list.shape[0])+' samples', fontsize=30)
 
-    fig.savefig(os.path.join(save_folder_path, mode+'_'+str(dim)+'_'+str(x_list.shape[0])+'.jpg'))
+    if interactive_mode:
+        plt.show()
+    else:
+        fig.savefig(os.path.join(save_folder_path, mode+'_'+str(dim)+'_'+str(x_list.shape[0])+'.jpg'))
 
 
 if __name__ == '__main__':
-
     # -------------------- Dataset Visualization Parameters--------------------
     folder_path = 'no_simulation_dataset_script'
     file_name = 'grid.csv'
@@ -206,13 +265,16 @@ if __name__ == '__main__':
     # The visualization method. ['plain', 'pca', 'tsne']
     mode = 'plain'
 
-    # The number of dimensions to visualize. For 'plain', 2 to 4 are supported and dim must be equal to len(chosen_labels); For 'pca', 2 to 4 are supported; for 'tsne', only 2 is supported
-    dim = 4
-    # dim = 4
+    # The number of dimensions to visualize. For 'plain', 2 to 4 are supported and dim must be equal to len(chosen_labels); For 'pca', 2 to 4 are supported; for 'tsne', 2 to 3 are supported and plot_dim must be equal to dim
+    dim = 3
 
     # The labels used for visualization. It is used only if mode == 'plain' and every label in the chosen_labels must be in labels
-    chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed']
-    # chosen_labels = ['x1', 'x2']
-    # chosen_labels = ['pedestrian_x_0', 'pedestrian_y_0', 'pedestrian_yaw_0', 'pedestrian_speed_0']
+    chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos']
 
-    visualize_data(folder_path, x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels)
+    # The dimensionality for plotting. [2, 3]. Note if plot_dim == 3, currently only dim == 3 is supported.
+    plot_dim = 3
+
+    # If pop up the interactive figure window. [False, True]. If True, the figure will not be saved automatically. This can be useful when plot_dim == 3 where this mode enables one to change viewing angle of the figure by draging the figure around.
+    interactive_mode = False
+
+    visualize_data(folder_path, x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels, plot_dim, interactive_mode)
