@@ -191,4 +191,4 @@ Open a browser and get to `localhost:9050`.
 
 The screenshot is shown below:
 
-<img src="figures/plain_3_17280_dataset_airsim_plotly_screenshot.jpg" width="50%" height="50%"/>
+<img src="figures/plain_3_17280_dataset_airsim_plotly_screenshot.jpg" width="100%" height="100%"/>
