@@ -26,7 +26,7 @@ mode = 'plain'
 dim = 4
 chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed']
 plot_dim = 2
-interactive_mode = False
+subplot_split_label = ''
 ```
 
 For 3D,
@@ -37,7 +37,18 @@ mode = 'plain'
 dim = 3
 chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos']
 plot_dim = 3
-interactive_mode = False
+subplot_split_label = ''
+```
+
+For 2D split according to one chosen label,
+
+```
+num_subplots = 1
+mode = 'plain'
+dim = 4
+chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed']
+plot_dim = 2
+subplot_split_label = 'ped_delay'
 ```
 
 ### Commands
@@ -53,6 +64,11 @@ The result (2D) is shown below:
 The result (3D) is shown below:
 
 <img src="figures/plain_3_17280_dataset_airsim_3d.jpg" width="50%" height="50%"/>
+
+The result (2D split) is shown below:
+
+<img src="figures/plain_4_17280_dataset_airsim_ped_delay.jpg" width="100%" height="100%"/>
+
 
 ## Fuzzing + Visualization - No Simulation (Function)
 ### Oracle
@@ -76,7 +92,7 @@ mode = 'plain'
 dim = 2
 chosen_labels = ['x1', 'x2']
 plot_dim = 2
-interactive_mode = False
+subplot_split_label = ''
 ```
 
 ### Commands
@@ -125,7 +141,7 @@ mode = 'plain'
 dim = 4
 chosen_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed']
 plot_dim = 2
-interactive_mode = False
+subplot_split_label = ''
 ```
 
 ### Commands
