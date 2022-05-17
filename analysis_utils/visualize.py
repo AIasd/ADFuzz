@@ -107,6 +107,7 @@ def plot_subplot(ax, x_list, y_list, chosen_inds, unique_y_list, legend, mode, c
     for j, y in enumerate(unique_y_list):
         color = colors[j]
         x_subset = x_sublist[y_sublist==y]
+        print('\t', 'y', y, 'len(x_subset)', len(x_subset))
         for k in range(x_subset.shape[0]):
             if legend and k == 0:
                 plot_arrow(ax, x_subset[k], y, color, plot_dim, legend=True)
