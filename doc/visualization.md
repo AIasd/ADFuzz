@@ -40,7 +40,7 @@ plot_dim = 3
 subplot_split_label = ''
 ```
 
-For 2D split according to one chosen label,
+For 2D where we show the subplots for data points with the same value of `subplot_split_label`,
 
 ```
 num_subplots = 1

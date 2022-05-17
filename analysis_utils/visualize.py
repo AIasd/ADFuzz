@@ -160,11 +160,11 @@ def extract_data_from_csv(folder_path, filename, x_labels, y_label):
 
 
 # -------------------- helper functions for visualize_data --------------------
-def visualize_data(save_folder_path, input_x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels, plot_dim, subplot_split_label=''):
+def visualize_data(save_folder_path, initial_x_list, y_list, x_labels, num_subplots, mode, dim, chosen_labels, plot_dim, subplot_split_label=''):
     # normalize the data first
     from sklearn.preprocessing import MinMaxScaler
-    transformer = MinMaxScaler().fit(input_x_list)
-    initial_x_list = transformer.transform(input_x_list)
+    transformer = MinMaxScaler().fit(initial_x_list)
+    x_list_normalized = transformer.transform(initial_x_list)
 
     if plot_dim == 3:
         assert dim == plot_dim
@@ -183,14 +183,14 @@ def visualize_data(save_folder_path, input_x_list, y_list, x_labels, num_subplot
 
 
         # dimensionality reduction is only used when input dimension is larger than the visualization dimension
-        assert initial_x_list.shape[1] > dim
+        assert x_list_normalized.shape[1] > dim
 
         if mode == 'pca':
             from sklearn.decomposition import PCA
             pca = PCA(n_components=dim, svd_solver='full')
-            pca.fit(initial_x_list)
+            pca.fit(x_list_normalized)
             print('dim', dim, 'pca.explained_variance_ratio_', pca.explained_variance_ratio_)
-            initial_x_list = pca.transform(initial_x_list)
+            x_list_normalized = pca.transform(x_list_normalized)
             inds_list = [i for i in range(dim)]
         elif mode == 'tsne':
             if plot_dim == 2:
@@ -198,26 +198,26 @@ def visualize_data(save_folder_path, input_x_list, y_list, x_labels, num_subplot
             elif plot_dim == 3:
                 assert dim == 3
             from sklearn.manifold import TSNE
-            print('initial_x_list.shape', initial_x_list.shape)
-            initial_x_list = TSNE(n_components=dim).fit_transform(initial_x_list)
+            print('x_list_normalized.shape', x_list_normalized.shape)
+            x_list_normalized = TSNE(n_components=dim).fit_transform(x_list_normalized)
             inds_list = [i for i in range(dim)]
         else:
             print('mode', mode)
             raise
 
     print('mode', mode, 'dim', dim, 'chosen_labels', chosen_labels)
-    print('initial_x_list.shape', initial_x_list.shape)
+    print('x_list_normalized.shape', x_list_normalized.shape)
     print('y_list.shape', y_list.shape)
 
-    x_list = initial_x_list[:, inds_list]
+    x_list = x_list_normalized[:, inds_list]
     unique_y_list = np.unique(y_list)
 
     if subplot_split_label:
-        v_list = np.unique(initial_x_list[:, split_ind])
+        v_list = np.unique(x_list_normalized[:, split_ind])
         num_subplots = len(v_list)
 
     assert num_subplots >= 1
-    assert initial_x_list.shape[0] >= num_subplots
+    assert x_list_normalized.shape[0] >= num_subplots
 
     num_subplots_col_num = int(np.ceil(np.sqrt(num_subplots)))
     num_subplots_row_num = int(np.ceil(num_subplots / num_subplots_col_num))
@@ -230,7 +230,8 @@ def visualize_data(save_folder_path, input_x_list, y_list, x_labels, num_subplot
     else:
         projection = '3d'
 
-    fig = plt.figure(figsize=(num_subplots_col_num*5, num_subplots_row_num*5))
+    unit_size = 6
+    fig = plt.figure(figsize=(num_subplots_col_num*unit_size, num_subplots_row_num*unit_size))
 
     # draw an overall plot
     ax = fig.add_subplot(num_subplots_col_num, num_subplots_row_num, 1, projection=projection)
@@ -243,8 +244,11 @@ def visualize_data(save_folder_path, input_x_list, y_list, x_labels, num_subplot
         for i, v in enumerate(v_list):
             ax = fig.add_subplot(num_subplots_col_num, num_subplots_row_num, i+num_subplots_col_num+1, projection=projection)
 
-            chosen_inds = np.where(initial_x_list[:, split_ind]==v)[0]
+            chosen_inds = np.where(x_list_normalized[:, split_ind]==v)[0]
+            print('v', v, 'len(chosen_inds)', len(chosen_inds), chosen_inds[:3])
             plot_subplot(ax, x_list, y_list, chosen_inds, unique_y_list, False, mode, chosen_labels, plot_dim, split_label_v_pair=(subplot_split_label, '{:.1f}'.format(v)))
+
+        fig.suptitle(mode+' with '+str(dim)+' dimensions for different '+subplot_split_label, fontsize=25)
 
     else:
         num_per_subplot = int(np.ceil(len(y_list) / num_subplots))
