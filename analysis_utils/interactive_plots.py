@@ -44,14 +44,14 @@ if use_subplots:
     if vis_dim == 2:
         plot_f = go.Scattergl
         # marker_size and marker_symbol are optional 3rd and 4th dimensions
-        # customdata is set to be a list of labels which are shown as hover information. 'data id' can be included as one element.
+        # customdata is set to be a list of labels which are shown as mouse hover information shown up. 'data id' can be included as one element.
         field_label_pairs = {
         'x': 'ego_pos',
         'y': 'ego_init_speed',
         'marker_color': 'oob',
-        # 'marker_size': 'other_init_pos',
+        # 'marker_size': 'other_pos',
         # 'marker_symbol': 'other_init_speed',
-        'customdata': ['ego_pos', 'ego_init_speed', 'oob', 'other_init_pos']
+        'customdata': ['ego_pos', 'ego_init_speed', 'oob', 'other_init_speed']
         }
     # elif vis_dim == 3:
     #     plot_f = go.Scatter3d
