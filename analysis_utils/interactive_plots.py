@@ -232,8 +232,6 @@ def update_bar_chart(*args):
             field_value_pairs['x'] = X_transformed[:, 0]
             field_value_pairs['y'] = X_transformed[:, 1]
 
-
-
             if if_draw_heatmap:
                 more_than_one_category, heatmap = draw_heatmap(df_mask_v, showscale, scaler, x_min, x_max, y_min, y_max)
                 if more_than_one_category:
@@ -241,33 +239,30 @@ def update_bar_chart(*args):
 
             fig.append_trace(go.Scatter(mode='markers', opacity=0.7, hovertemplate='<br>'.join([k+': %{customdata['+str(i)+']}' for i, k in enumerate(field_label_pairs['customdata'])]), **field_value_pairs), row=row_i, col=col_i)
 
-            # fig.append_trace(go.Scatter(mode='markers', opacity=0.7, hovertemplate='<br>'.join([str(field_label_pairs['customdata'])+': %{customdata}']), **field_value_pairs), row=row_i, col=col_i)
-
         # to keep the x and y ranges not changing while using slidebars.
         if vis_dim == 2:
             for i in range(1, num_subplots+1):
                 fig.update_layout(**{'xaxis'+str(i)+'_range':[x_min, x_max], 'yaxis'+str(i)+'_range':[y_min, y_max]})
 
-        elif vis_dim == 3:
-            for i in range(1, num_subplots+1):
-                fig.update_layout(**{'xaxis'+str(i)+'_range':[x_min, x_max], 'yaxis'+str(i)+'_range':[y_min, y_max], 'zaxis'+str(i)+'_range':[z_min, z_max]})
-        fig.update_layout(showlegend=False)
-
-    else:
-        fig = plot_f(df_mask, size_max=18, opacity=0.7, **additional_params, **field_label_pairs)
-
-        x_min, x_max = get_bounds(df[field_label_pairs['x']])
-        y_min, y_max = get_bounds(df[field_label_pairs['y']])
-        if vis_dim == 3:
-            z_min, z_max = get_bounds(df[field_label_pairs['z']])
-
-        if vis_dim == 2:
-            fig.update_layout(xaxis_range=[x_min, x_max], yaxis_range=[y_min, y_max])
-        elif vis_dim == 3:
-            fig.update_layout(xaxis_range=[x_min, x_max], yaxis_range=[y_min, y_max], zaxis_range=[z_min, z_max])
-
-        temp1 = fig.data[0].hovertemplate
-        fig.update_traces(hovertemplate = temp1 + '<br>' + field_label_pairs['custom_data'][0] + "=%{customdata[0]}" + '<br>' + field_label_pairs['custom_data'][1] + "=%{customdata[1]}")
+    #     elif vis_dim == 3:
+    #         for i in range(1, num_subplots+1):
+    #             fig.update_layout(**{'xaxis'+str(i)+'_range':[x_min, x_max], 'yaxis'+str(i)+'_range':[y_min, y_max], 'zaxis'+str(i)+'_range':[z_min, z_max]})
+    #     fig.update_layout(showlegend=False)
+    #
+    # else:
+    #     fig = plot_f(df_mask, size_max=18, opacity=0.7, **additional_params, **field_label_pairs)
+    #
+    #     x_min, x_max = get_bounds(df[field_label_pairs['x']])
+    #     y_min, y_max = get_bounds(df[field_label_pairs['y']])
+    #
+    #     if vis_dim == 2:
+    #         fig.update_layout(xaxis_range=[x_min, x_max], yaxis_range=[y_min, y_max])
+    #     elif vis_dim == 3:
+    #         z_min, z_max = get_bounds(df[field_label_pairs['z']])
+    #         fig.update_layout(xaxis_range=[x_min, x_max], yaxis_range=[y_min, y_max], zaxis_range=[z_min, z_max])
+    #
+    #     temp1 = fig.data[0].hovertemplate
+    #     fig.update_traces(hovertemplate = temp1 + '<br>' + field_label_pairs['custom_data'][0] + "=%{customdata[0]}" + '<br>' + field_label_pairs['custom_data'][1] + "=%{customdata[1]}")
 
     return fig
 
