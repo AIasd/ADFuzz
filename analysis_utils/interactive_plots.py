@@ -144,7 +144,7 @@ app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
     html.H1('Data filtered by different features', style={'textAlign': 'center'}),
-    dcc.Graph(id="3d-scatter-plot-x-graph")]+sliders+[html.Div(id='hidden-div', style={'display':'none'})])
+    dcc.Graph(id="3d-scatter-plot-x-graph")]+sliders)
 all_inputs = [Input('3d-scatter-plot-x-range-slider'+'-'+label, "value") for label in all_labels]
 
 
@@ -181,7 +181,7 @@ if url_label in field_label_pairs['customdata']:
     import webbrowser
     from dash.exceptions import PreventUpdate
     @app.callback(
-        Output("hidden-div", 'style'),
+        Output("3d-scatter-plot-x-graph", 'clickData'),
         [Input("3d-scatter-plot-x-graph", 'clickData')])
     def open_url(clickData):
         print('clickData', clickData)
