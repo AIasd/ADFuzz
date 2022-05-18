@@ -183,28 +183,16 @@ jupyter notebook
 Open the file `visualize.ipynb`, adjust folder_path, filename, and parameters (same as above) according to one's need, and run it.
 
 
-## Plotly 3D Plot Local
-Adjust folder_path, filename, and field_label_pairs according to one's need in `3d_scatter_plot.py`.
-
-In the current example, we visualize 5 x features and 1 y feature. The keys correspond to what aspect in the plot correspond to each selected feature.
-```
-field_label_pairs = {
-'x': 'ego_pos',
-'y': 'ego_init_speed',
-'z': 'other_pos',
-'color': 'oob',
-'size': 'other_init_speed',
-'symbol': 'ped_delay'
-}
-```
+## Plot interactive plots
+Adjust `folder_path`, `filename`, `subplot_split_label`, and `field_label_pairs` according to one's need in `interactive_plots.py`.
 
 Then, run
 ```
-python 3d_scatter_plot.py
+python analysis_utils/interactive_plots.py
 ```
 
 Open a browser and get to `localhost:9050`.
 
 The screenshot is shown below:
 
-<img src="figures/plain_3_17280_dataset_airsim_plotly_screenshot.jpg" width="100%" height="100%"/>
+<img src="figures/plain_2_1500_dataset_airsim_plotly_screenshot.jpg" width="100%" height="100%"/>
