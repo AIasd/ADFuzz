@@ -41,17 +41,21 @@ max_num_steps = 10
 if use_subplots:
     # subplot_split_label is used to split subplots. It can be set to 'system version'.
     subplot_split_label = 'collision'
+    # url_label is the url label and its address can be visited by clicking the corresponding point.
+    # the url_label in field_label_pairs['customdata'] must be kept if it is used
+    url_label = 'source'
     if vis_dim == 2:
         plot_f = go.Scattergl
         # marker_size and marker_symbol are optional 3rd and 4th dimensions
         # customdata is set to be a list of labels which are shown as mouse hover information shown up. 'data id' can be included as one element.
+
         field_label_pairs = {
         'x': 'ego_pos',
         'y': 'ego_init_speed',
         'marker_color': 'oob',
         # 'marker_size': 'other_pos',
         # 'marker_symbol': 'other_init_speed',
-        'customdata': ['ego_pos', 'ego_init_speed', 'oob', 'other_init_speed']
+        'customdata': ['ego_pos', 'ego_init_speed', 'oob', 'other_init_speed', url_label]
         }
     # elif vis_dim == 3:
     #     plot_f = go.Scatter3d
@@ -97,7 +101,7 @@ for k, v in field_label_pairs.items():
     if k not in ['text']:
         if k in ['custom_data', 'customdata']:
             for vi in v:
-                if vi not in all_labels:
+                if vi not in all_labels and vi not in [url_label]:
                     all_labels.append(vi)
         else:
             if v not in all_labels:
@@ -140,7 +144,7 @@ app = Dash(__name__, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
     html.H1('Data filtered by different features', style={'textAlign': 'center'}),
-    dcc.Graph(id="3d-scatter-plot-x-graph")]+sliders)
+    dcc.Graph(id="3d-scatter-plot-x-graph")]+sliders+[html.Div(id='hidden-div', style={'display':'none'})])
 all_inputs = [Input('3d-scatter-plot-x-range-slider'+'-'+label, "value") for label in all_labels]
 
 
@@ -173,6 +177,20 @@ def draw_heatmap(df_mask_v, showscale, scaler, x_min, x_max, y_min, y_max):
     return True, go.Heatmap(x=xx[0], y=y_, z=Z,
               colorscale='RdBu',
               showscale=showscale)
+if url_label in field_label_pairs['customdata']:
+    import webbrowser
+    from dash.exceptions import PreventUpdate
+    @app.callback(
+        Output("hidden-div", 'style'),
+        [Input("3d-scatter-plot-x-graph", 'clickData')])
+    def open_url(clickData):
+        print('clickData', clickData)
+        if clickData != None:
+            url_ind = field_label_pairs['customdata'].index(url_label)
+            url = clickData['points'][0]['customdata'][url_ind]
+            webbrowser.open_new_tab(url)
+        else:
+            raise PreventUpdate
 
 @app.callback(
     Output("3d-scatter-plot-x-graph", "figure"),
@@ -225,8 +243,12 @@ def update_bar_chart(*args):
                         scaler_marker_size = MinMaxScaler()
                         scaler_marker_size.fit(np.expand_dims(df[label], 1))
                         value = np.squeeze(scaler_marker_size.transform(np.expand_dims(value, 1)))*20
-
                     field_value_pairs[field_name] = value
+                    # click url test
+                    # if field_name == 'customdata':
+                    #     value[:, 0] = np.array(["https://www.google.com"]*value.shape[0])
+                    #     field_value_pairs[field_name] = value
+
 
             X_transformed = scaler.transform(df_mask_v[[field_label_pairs['x'], field_label_pairs['y']]].to_numpy())
             field_value_pairs['x'] = X_transformed[:, 0]
@@ -237,12 +259,22 @@ def update_bar_chart(*args):
                 if more_than_one_category:
                     fig.append_trace(heatmap, row=row_i, col=col_i)
 
-            fig.append_trace(go.Scatter(mode='markers', opacity=0.7, hovertemplate='<br>'.join([k+': %{customdata['+str(i)+']}' for i, k in enumerate(field_label_pairs['customdata'])]), **field_value_pairs), row=row_i, col=col_i)
+            hover_text_list = []
+            for i, k in enumerate(field_label_pairs['customdata']):
+                if k != url_label:
+                    hover_text_list.append(k+': %{customdata['+str(i)+']}')
+            hovertemplate = '<br>'.join(hover_text_list)
+
+            fig.append_trace(go.Scatter(mode='markers', opacity=0.7, hovertemplate=hovertemplate, **field_value_pairs), row=row_i, col=col_i)
+            fig.update_xaxes(title_text=field_label_pairs['x'], row=row_i, col=col_i)
+            fig.update_yaxes(title_text=field_label_pairs['y'], row=row_i, col=col_i)
 
         # to keep the x and y ranges not changing while using slidebars.
         if vis_dim == 2:
             for i in range(1, num_subplots+1):
                 fig.update_layout(**{'xaxis'+str(i)+'_range':[x_min, x_max], 'yaxis'+str(i)+'_range':[y_min, y_max]})
+        fig.update_layout(showlegend=False)
+
 
     #     elif vis_dim == 3:
     #         for i in range(1, num_subplots+1):
