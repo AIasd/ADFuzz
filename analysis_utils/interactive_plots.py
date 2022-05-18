@@ -51,7 +51,7 @@ if use_subplots:
         'marker_color': 'oob',
         # 'marker_size': 'other_init_pos',
         # 'marker_symbol': 'other_init_speed',
-        'customdata': ['ego_pos', 'ego_init_speed', 'oob']
+        'customdata': ['ego_pos', 'ego_init_speed', 'oob', 'other_init_pos']
         }
     # elif vis_dim == 3:
     #     plot_f = go.Scatter3d
