@@ -185,7 +185,7 @@ if url_label in field_label_pairs['customdata']:
         [Input("3d-scatter-plot-x-graph", 'clickData')])
     def open_url(clickData):
         print('clickData', clickData)
-        if clickData != None:
+        if clickData != None and 'customdata' in clickData['points'][0]:
             url_ind = field_label_pairs['customdata'].index(url_label)
             url = clickData['points'][0]['customdata'][url_ind]
             webbrowser.open_new_tab(url)
