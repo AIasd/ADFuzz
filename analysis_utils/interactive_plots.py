@@ -41,13 +41,15 @@ max_num_steps = 10
 if use_subplots:
     # subplot_split_label is used to split subplots. It can be set to 'system version'.
     subplot_split_label = 'collision'
-    # url_label is the url label and its address can be visited by clicking the corresponding point.
-    # the url_label in field_label_pairs['customdata'] must be kept if it is used
+    # url_label is the url label and its address can be visited by clicking the corresponding point. Note the url_label in field_label_pairs['customdata'] must be kept if it is used.
     url_label = 'source'
+    # this list consists of labels in customdata that will also be used for the slidebar filter purpose.
+    customdata_filter_labels = ['other_init_speed']
+
     if vis_dim == 2:
         plot_f = go.Scattergl
         # marker_size and marker_symbol are optional 3rd and 4th dimensions
-        # customdata is set to be a list of labels which are shown as mouse hover information shown up. 'data id' can be included as one element.
+        # customdata is set to be a list of labels which are shown as mouse hover information shown up. 'data id' can be included as one element. url_label is not shown since it is usally very long.
 
         field_label_pairs = {
         'x': 'ego_pos',
@@ -96,19 +98,19 @@ if use_subplots:
 # ---------------------------------------------------------------
 
 
-all_labels = []
+all_filter_labels = []
 for k, v in field_label_pairs.items():
     if k not in ['text']:
         if k in ['custom_data', 'customdata']:
             for vi in v:
-                if vi not in all_labels and vi not in [url_label]:
-                    all_labels.append(vi)
+                if vi not in all_filter_labels and vi in customdata_filter_labels:
+                    all_filter_labels.append(vi)
         else:
-            if v not in all_labels:
-                all_labels.append(v)
+            if v not in all_filter_labels:
+                all_filter_labels.append(v)
 bar_values = []
 le_dict = {}
-for label in all_labels:
+for label in all_filter_labels:
     df_label_np = df[label].to_numpy()
     if df_label_np.dtype in ['int', 'float']:
         values = df_label_np.astype('float')
@@ -145,7 +147,7 @@ app = Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div([
     html.H1('Data filtered by different features', style={'textAlign': 'center'}),
     dcc.Graph(id="3d-scatter-plot-x-graph")]+sliders)
-all_inputs = [Input('3d-scatter-plot-x-range-slider'+'-'+label, "value") for label in all_labels]
+all_inputs = [Input('3d-scatter-plot-x-range-slider'+'-'+label, "value") for label in all_filter_labels]
 
 
 def get_bounds(df_x_label):
@@ -199,7 +201,7 @@ def update_bar_chart(*args):
     sliders_ranges = args
 
     mask = pandas.Series([True for _ in range(len(df.index))])
-    for label, slider_range in zip(all_labels, sliders_ranges):
+    for label, slider_range in zip(all_filter_labels, sliders_ranges):
         v_min, v_max = slider_range
         mask = mask & (df[label] >= v_min) & (df[label] <= v_max)
     df_mask = df[mask]
