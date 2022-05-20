@@ -15,7 +15,7 @@ from sklearn.preprocessing import LabelEncoder
 # seed for deterministic result for SVC
 random_seed = 0
 # the list must be >= the number of distinct target values
-color_map = ['blue', 'red', 'green', 'goldenrod', 'magenta']
+color_map = ['green', 'red', 'green', 'goldenrod', 'magenta']
 symbol_map = SymbolValidator().values
 
 use_subplots = True
@@ -40,7 +40,7 @@ max_num_steps = 10
 
 if use_subplots:
     # subplot_split_label is used to split subplots. It can be set to 'system version'.
-    subplot_split_label = 'collision'
+    subplot_split_label = 'other_init_speed'
     # url_label is the url label and its address can be visited by clicking the corresponding point. Note the url_label in field_label_pairs['customdata'] must be kept if it is used.
     url_label = 'source'
     # this list consists of labels in customdata that will also be used for the slidebar filter purpose.
@@ -240,7 +240,7 @@ def update_bar_chart(*args):
                     elif field_name == 'marker_size':
                         scaler_marker_size = MinMaxScaler()
                         scaler_marker_size.fit(np.expand_dims(df[label], 1))
-                        value = np.squeeze(scaler_marker_size.transform(np.expand_dims(value, 1)))*20
+                        value = np.squeeze(scaler_marker_size.transform(np.expand_dims(value, 1)))*4
                     field_value_pairs[field_name] = value
                     # click url test
                     # if field_name == 'customdata':
@@ -263,15 +263,20 @@ def update_bar_chart(*args):
                     hover_text_list.append(k+': %{customdata['+str(i)+']}')
             hovertemplate = '<br>'.join(hover_text_list)
 
+            if 'marker_size' not in field_value_pairs:
+                field_value_pairs['marker_size'] = 2
+
             fig.append_trace(go.Scatter(mode='markers', opacity=0.7, hovertemplate=hovertemplate, **field_value_pairs), row=row_i, col=col_i)
-            fig.update_xaxes(title_text=field_label_pairs['x'], row=row_i, col=col_i)
-            fig.update_yaxes(title_text=field_label_pairs['y'], row=row_i, col=col_i)
+            fig.update_xaxes(title_text=field_label_pairs['x'], row=row_i, col=col_i, automargin=True)
+            fig.update_yaxes(title_text=field_label_pairs['y'], row=row_i, col=col_i, automargin=True)
 
         # to keep the x and y ranges not changing while using slidebars.
         if vis_dim == 2:
             for i in range(1, num_subplots+1):
                 fig.update_layout(**{'xaxis'+str(i)+'_range':[x_min, x_max], 'yaxis'+str(i)+'_range':[y_min, y_max]})
-        fig.update_layout(showlegend=False)
+        fig.update_layout(showlegend=False, autosize=True, width=col_num*400, height=row_num*400)
+
+
 
 
     #     elif vis_dim == 3:
