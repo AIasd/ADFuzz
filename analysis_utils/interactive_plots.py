@@ -109,16 +109,14 @@ for k, v in field_label_pairs.items():
             if v not in all_filter_labels:
                 all_filter_labels.append(v)
 bar_values = []
-le_dict = {}
 for label in all_filter_labels:
     df_label_np = df[label].to_numpy()
-    if df_label_np.dtype in ['int', 'float']:
+    # print(label, df_label_np.dtype, 'df_label_np', df_label_np)
+    if df_label_np.dtype in ['int', 'float', 'bool']:
         values = df_label_np.astype('float')
     else:
-        le = LabelEncoder()
-        le.fit(df_label_np)
-        values = le.transform(df_label_np)
-        le_dict[label] = le
+        raise ValueError(label+' has type: '+str(df_label_np.dtype)+' but only int and float are supported for making slide bars.')
+
     v_min = np.min(values)
     v_max = np.max(values)
     v_count = len(np.unique(values))
@@ -235,8 +233,6 @@ def update_bar_chart(*args):
             for field_name, label in field_label_pairs.items():
                 if field_name not in ['x', 'y']:
                     value = df_mask_v[label].to_numpy()
-                    if value.dtype not in ['int', 'float'] and field_name not in ['customdata', 'text']:
-                        value = le_dict[label].transform(value)
                     if field_name == 'marker_color':
                         value = np.array([color_map[v] for v in value.astype('int')])
                     elif field_name == 'marker_symbol':
