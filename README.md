@@ -19,7 +19,7 @@ ADFuzz currently support several algorithms and variations listed below. The rel
 
 #### Algorithms
 - NSGA2-SM (`-a nsga2 --rank_mode regression_nn --use_single_objective 0 --only_run_unique_cases 0 --regression_nn_use_running_data 0 --warm_up_path <path-to-warm-up-folder> --warm_up_len 500`)
-- NSGA2-DT (`-a nsga2-dt --use_single_objective 0 --only_run_unique_cases 0 --outer_iterations 3`)
+- NSGA2-DT (`-a nsga2-dt --use_single_objective 0 --only_run_unique_cases 0 --outer_iterations 3 --n_gen 5`)
 - AV-Fuzzer (`-a avfuzzer --only_run_unique_cases 0`)
 - AutoFuzz (GA-UN-NN-GRAD) (`-a nsga2-un --rank_mode adv_nn` )
 

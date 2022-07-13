@@ -20,7 +20,7 @@ from datetime import datetime
 from customized_utils import make_hierarchical_dir
 from svl_specific import run_svl_simulation
 
-parent_folder = 'svl_script/run_results_svl/nsga2-un/BorregasAve_forward/go_across_junction_ba/apollo_6_with_signal/2021_12_09_00_12_35,20_15_none_300_coeff_0.0_0.1_0.5_only_unique_1/rerun'
+parent_folder = 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2022_04_04_22_45_33,10_24_none_240_coeff_0.0_0.1_0.5_only_unique_1/rerun'
 
 now = datetime.now()
 dt_time_str = now.strftime("%Y_%m_%d_%H_%M_%S")

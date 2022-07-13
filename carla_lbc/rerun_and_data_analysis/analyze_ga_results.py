@@ -5,15 +5,17 @@ carla_root = '../carla_0994_no_rss'
 sys.path.append(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
 sys.path.append(carla_root+'/PythonAPI/carla')
 sys.path.append(carla_root+'/PythonAPI')
+
+
 sys.path.append('.')
-sys.path.append('leaderboard')
-sys.path.append('leaderboard/team_code')
-sys.path.append('scenario_runner')
-sys.path.append('carla_project')
-sys.path.append('carla_project/src')
-
-
-
+sys.path.append('fuzzing_utils')
+sys.path.append('carla_lbc')
+sys.path.append('carla_lbc/leaderboard')
+sys.path.append('carla_lbc/leaderboard/team_code')
+sys.path.append('carla_lbc/scenario_runner')
+sys.path.append('carla_lbc/carla_project')
+sys.path.append('carla_lbc/carla_project/src')
+sys.path.append('carla_lbc/carla_specific_utils')
 
 import pickle
 import numpy as np
@@ -23,11 +25,14 @@ from sklearn.manifold import TSNE
 from customized_utils import filter_critical_regions, get_sorted_subfolders, load_data, get_picklename, is_distinct_vectorized
 from matplotlib.lines import Line2D
 
-# from carla_specific_utils.carla_specific import get_event_location_and_object_type
+from carla_lbc.carla_specific_utils.carla_specific import get_event_location_and_object_type
 
 
 from svl_script.svl_specific import check_bug
 default_objectives = np.array([0., 20., 1., 7., 7., 0., 0., 0., 0., 0.])
+
+
+from carla_lbc.carla_specific_utils import setup_labels_and_bounds
 
 
 def draw_hv(bug_res_path, save_folder):
@@ -757,17 +762,16 @@ def count_unique_bug_num(prev_X, cur_X, prev_objectives, cur_objectives, cutoff,
         if len(prev_X) > 0:
             prev_inds = prev_objectives[:, -3] == 1
             prev_X_bug = prev_X[prev_inds]
-
         cur_inds = cur_objectives[cutoff_start:cutoff, -3] == 1
         cur_X_bug_1 = cur_X[cutoff_start:cutoff][cur_inds]
         inds = is_distinct_vectorized(cur_X_bug_1, prev_X_bug, mask, xl, xu, p, c, th, verbose=verbose)
         bug_num += len(inds)
 
-        prev_inds = prev_objectives[:, -2] == 1
+        if len(prev_X) > 0:
+            prev_inds = prev_objectives[:, -2] == 1
+            prev_X_bug = prev_X[prev_inds]
         cur_inds = cur_objectives[cutoff_start:cutoff, -2] == 1
-        prev_X_bug = prev_X[prev_inds]
         cur_X_bug_2 = cur_X[cutoff_start:cutoff][cur_inds]
-
         inds = is_distinct_vectorized(cur_X_bug_2, prev_X_bug, mask, xl, xu, p, c, th, verbose=verbose)
         bug_num += len(inds)
 
@@ -849,7 +853,10 @@ def draw_unique_bug_num_over_simulations(path_list, warmup_pth_list, warmup_pth_
         num_of_all_bugs_list = []
 
         for pth in pth_list:
+            prefix_folder = '../2020_CARLA_challenge'
+            pth = os.path.join(prefix_folder, pth)
             if warmup_pth:
+                warmup_pth = os.path.join(prefix_folder, warmup_pth)
                 subfolders = get_sorted_subfolders(warmup_pth)
                 prev_X, _, prev_objectives, _, _, _ = load_data(subfolders)
                 prev_X = np.array(prev_X)[:warmup_pth_cutoff]
@@ -1054,7 +1061,6 @@ def count_bug(town_list):
 
 
     for label, town_path, warmup_pth, warmup_pth_cutoff in town_list:
-        from customized_utils import get_event_location_and_object_type
 
         subfolders = get_sorted_subfolders(town_path)
         cur_X, _, cur_objectives, _, _, cur_info = load_data(subfolders)
@@ -1181,123 +1187,7 @@ def count_bug(town_list):
 
 
 if __name__ == '__main__':
-    town07_path_list = [
-    ('ga-un-nn-grad', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1900_500nsga2initial/2021_02_20_12_57_59,50_80_adv_nn_1900_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_2/2021_02_25_11_25_45,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_2/2021_02_25_00_22_45,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_3/2021_05_31_21_13_29,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_4/2021_06_07_19_04_51,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_5/2021_06_11_00_22_01,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm-un-a', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_19_00_23_01,50_20_regression_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1900_500nsga2initial/2021_02_20_11_27_47,50_80_regression_nn_1900_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_2/2021_02_25_21_29_48,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_3/2021_05_31_21_13_14,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_4/2021_06_07_19_04_35,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial_5/2021_06_11_00_23_21,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm', ['run_results/nsga2/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_500nsga2initial_1000/2021_02_18_21_53_03,50_20_regression_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1900_500nsga2initial/2021_02_20_11_27_54,50_80_regression_nn_1900_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_500nsga2initial_700/2021_02_25_18_13_47,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1900_500nsga2initial_2/2021_05_31_21_13_20,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1900_500nsga2initial_3/2021_06_07_19_04_40,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1900_500nsga2initial_4/2021_06_11_00_21_41,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01']),
-    # ('nsga2-dt', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_19_17_56_00', 'run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1900_500nsga2initial/2021_02_20_11_52_50']),
-    ('nsga2-dt', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_new_0.1_0.5_1000_500nsga2initial/2021_02_22_23_55_00', 'run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_new_0.1_0.5_1000_500nsga2initial_2/2021_02_23_09_12_59', 'run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_new_0.1_0.5_1000_500nsga2initial_4/2021_02_25_15_05_25', 'run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_new_0.1_0.5_1000_500nsga2initial_5/2021_05_31_22_53_08', 'run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_new_0.1_0.5_1000_500nsga2initial_6/2021_06_07_19_04_45', 'run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_new_0.1_0.5_1000_500nsga2initial_7/2021_06_11_00_21_50'])
-    ]
-
-    town01_path_list = [
-    ('ga-un-nn-grad', ['run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_18_16_32_41,50_20_adv_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_2/2021_02_23_09_14_24,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_3/2021_02_25_20_40_41,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_4/2021_05_31_16_00_01,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_5/2021_06_06_23_09_25,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_6/2021_06_10_00_31_30,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm-un-a', ['run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_19_10_45_59,52_20_regression_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_2/2021_02_23_00_19_26,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_3/2021_02_23_13_07_35,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_4/2021_05_31_16_05_15,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_5/2021_06_06_23_09_12,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_6/2021_06_13_00_33_07,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm', ['run_results/nsga2/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_19_10_46_11,50_20_regression_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_2/2021_02_23_18_41_01,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_3/2021_02_25_20_40_28,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_4/2021_05_31_16_05_23,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_5/2021_06_06_23_09_16,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial_6/2021_06_10_00_31_20,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01']),
-    # ('nsga2-dt', ['run_results/nsga2-dt/town01_left_0/turn_left_town01/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_19_17_55_52']),
-    ('nsga2-dt', ['run_results/nsga2-dt/town01_left_0/turn_left_town01/lbc/new_new_0.1_0.5_1000_500nsga2initial/2021_02_23_08_49_48', 'run_results/nsga2-dt/town01_left_0/turn_left_town01/lbc/new_new_0.1_0.5_1000_500nsga2initial_2/2021_02_23_13_53_07', 'run_results/nsga2-dt/town01_left_0/turn_left_town01/lbc/new_new_0.1_0.5_1000_500nsga2initial_4/2021_02_25_20_40_35', 'run_results/nsga2-dt/town01_left_0/turn_left_town01/lbc/new_new_0.1_0.5_1000_500nsga2initial_5/2021_05_31_16_05_31', 'run_results/nsga2-dt/town01_left_0/turn_left_town01/lbc/new_new_0.1_0.5_1000_500nsga2initial_6/2021_06_06_23_09_20', 'run_results/nsga2-dt/town01_left_0/turn_left_town01/lbc/new_new_0.1_0.5_1000_500nsga2initial_7/2021_06_10_00_31_25'])
-    ]
-
-    town03_out_of_road_path_list = [
-    ('ga-un-nn-grad', ['run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road/2021_02_20_23_50_02,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_2/2021_02_22_11_30_44,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_3/2021_02_25_11_25_05,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_4/2021_06_04_00_12_01,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_5/2021_06_07_22_22_34,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_6/2021_06_11_23_40_33,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm-un-a', ['run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road/2021_02_21_16_22_51,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_2/2021_02_22_11_30_32,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_3/2021_02_25_11_24_51,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_4/2021_06_04_00_11_09,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_5/2021_06_07_22_22_10,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_6/2021_06_11_23_40_20,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm', ['run_results/nsga2/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road/2021_02_21_16_22_16,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_2/2021_02_22_11_30_37,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_3/2021_02_25_11_24_56,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_4/2021_06_04_00_11_14,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_5/2021_06_05_23_26_38,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_6/2021_06_07_22_22_17,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01']),
-    # ('nsga2-dt', ['run_results/nsga2-dt/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road/2021_02_21_10_57_24', 'run_results/nsga2-dt/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_0.1_0.5_1000_500nsga2initial_out_of_road_2/2021_02_22_00_22_22']),
-    ('nsga2-dt', ['run_results/nsga2-dt/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_new_0.1_0.5_1000_500nsga2initial_out_of_road/2021_02_22_22_05_51', 'run_results/nsga2-dt/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_new_0.1_0.5_1000_500nsga2initial_out_of_road_2/2021_02_23_09_12_57', 'run_results/nsga2-dt/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_new_0.1_0.5_1000_500nsga2initial_out_of_road_4/2021_02_25_11_25_01', 'run_results/nsga2-dt/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_new_0.1_0.5_1000_500nsga2initial_out_of_road_5/2021_06_04_00_11_56', 'run_results/nsga2-dt/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_new_0.1_0.5_1000_500nsga2initial_out_of_road_6/2021_06_05_23_26_48', 'run_results/nsga2-dt/town03_front_1/change_lane_town03_fixed_npc_num/lbc/new_new_0.1_0.5_1000_500nsga2initial_out_of_road_7/2021_06_07_22_22_25']),
-
-    ]
-
-    town05_out_of_road_path_list = [
-    ('ga-un-nn-grad', ['run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road/2021_02_20_23_49_57,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_2/2021_02_22_00_22_13,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_3/2021_02_23_14_43_00,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_4/2021_06_02_23_40_41,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_5/2021_06_04_23_37_29,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_6/2021_06_09_01_36_38,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm-un-a', ['run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road/2021_02_22_00_21_51,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_2/2021_02_22_11_30_18,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_3/2021_02_23_14_42_28,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_4/2021_06_03_00_22_33,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_5/2021_06_04_23_37_17,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01', 'run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_6/2021_06_09_01_36_16,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm', ['run_results/nsga2/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road/2021_02_22_00_22_02,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_2/2021_02_22_11_30_24,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_3/2021_02_23_14_42_33,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_4/2021_06_02_23_40_32,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_5/2021_06_04_23_37_20,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01', 'run_results/nsga2/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500nsga2initial_700_out_of_road_6/2021_06_09_01_36_23,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01']),
-    # ('nsga2-dt', ['run_results/nsga2-dt/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_700_500nsga2initial_out_of_road/2021_02_20_23_49_52']),
-    ('nsga2-dt', ['run_results/nsga2-dt/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_new_0.1_0.5_700_500nsga2initial_out_of_road/2021_02_22_22_05_46', 'run_results/nsga2-dt/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_new_0.1_0.5_700_500nsga2initial_out_of_road_2/2021_02_23_09_13_04', 'run_results/nsga2-dt/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_new_0.1_0.5_700_500nsga2initial_out_of_road_3/2021_02_23_14_42_39', 'run_results/nsga2-dt/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_new_0.1_0.5_700_500nsga2initial_out_of_road_4/2021_06_02_23_40_36', 'run_results/nsga2-dt/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_new_0.1_0.5_700_500nsga2initial_out_of_road_5/2021_06_04_23_37_25', 'run_results/nsga2-dt/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_new_0.1_0.5_700_500nsga2initial_out_of_road_6/2021_06_09_01_36_29']),
-    ]
-
-    town07_ablation_path_list = [
-    ('ga-un-nn-grad(eps=1)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_17_22_40_12,50_20_adv_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un-nn-grad(eps=0.3)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_21_10_57_47,50_22_adv_nn_700_100_0.3_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_0.3']),
-    ('ra-un-nn-grad', ['run_results/random-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500nsga2initial/2021_02_20_19_22_41,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un-nn', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_17_22_40_59,50_20_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un', ['run_results/seeds/nsga2_un_1500/town07_front_0/2021_02_17_11_54_52,50_30_none_1500_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga', ['run_results/nsga2/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_500nsga2initial_1000/2021_02_21_13_58_17,50_22_none_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01']),
-    ('ra', ['run_results/random/town07_front_0/go_straight_town07/lbc/0.1_0.5_700_500nsga2initial/2021_02_21_13_58_49,50_22_none_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_0_eps_1.01'])
-    ]
-
-    town07_seeds_ablation_path_list = [
-    ('ga-un-nn-grad(eps=1)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_17_22_40_12,50_20_adv_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01'])
-
-    ]
-
-    town07_unique_ablation_path_list = [
-    ('ga-un-nn-grad(0.05, 0.25)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_21_19_08_51,50_22_adv_nn_300_100_1.01_-4_0.9_coeff_0.0_0.05_0.25__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un-nn-grad(0.1, 0.25)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_21_21_01_13,50_22_adv_nn_300_100_1.01_-4_0.9_coeff_0.0_0.1_0.25__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un-nn-grad(0.2, 0.25)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_21_19_25_57,50_10_adv_nn_300_100_1.01_-4_0.9_coeff_0.0_0.2_0.25__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un-nn-grad(0.05, 0.5)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_21_20_28_14,50_10_adv_nn_300_100_1.01_-4_0.9_coeff_0.0_0.05_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un-nn-grad(0.1, 0.5)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_17_22_40_12,50_20_adv_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un-nn-grad(0.2, 0.5)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_21_20_40_13,50_12_adv_nn_300_100_1.01_-4_0.9_coeff_0.0_0.2_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('ga-un-nn-grad(0.05, 0.75)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_21_22_02_57,50_12_adv_nn_300_100_1.01_-4_0.9_coeff_0.0_0.05_0.75__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    # ('ga-un-nn-grad(0.1, 0.75)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_22_22_21_35,50_12_adv_nn_300_100_1.01_-4_0.9_coeff_0.0_0.1_0.75__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    # ('ga-un-nn-grad(0.2, 0.75)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_22_23_09_14,50_12_adv_nn_300_100_1.01_-4_0.9_coeff_0.0_0.2_0.75__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01'])
-    ]
-
-    town07_regression_nn_unique_ablation_path_list = [
-    ('regression-un-nn(0.05, 0.25)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th_regression_nn/2021_02_23_14_08_07,50_12_regression_nn_300_100_1.01_-4_0.9_coeff_0.0_0.05_0.25__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('regression-un-nn(0.1, 0.25)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th_regression_nn/2021_02_23_16_18_09,50_12_regression_nn_300_100_1.01_-4_0.9_coeff_0.0_0.1_0.25__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('regression-un-nn(0.2, 0.25)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th_regression_nn/2021_02_23_16_47_48,50_12_regression_nn_300_100_1.01_-4_0.9_coeff_0.0_0.2_0.25__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('regression-un-nn(0.05, 0.5)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th_regression_nn/2021_02_23_18_43_32,50_12_regression_nn_300_100_1.01_-4_0.9_coeff_0.0_0.05_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('regression-un-nn(0.1, 0.5)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_19_00_23_01,50_20_regression_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('regression-un-nn(0.2, 0.5)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th_regression_nn/2021_02_23_20_05_46,50_12_regression_nn_300_100_1.01_-4_0.9_coeff_0.0_0.2_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('regression-un-nn(0.05, 0.75)', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th_regression_nn/2021_02_23_20_55_39,50_12_regression_nn_300_100_1.01_-4_0.9_coeff_0.0_0.05_0.75__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01'])
-    ]
-
-    town07_nsga2_dt_unique_ablation_path_list = [
-    ('nsga2-dt(0.05, 0.25)', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_23_21_40_53_0.05_0.25']),
-    ('nsga2-dt(0.1, 0.25)', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_23_22_30_01_0.1_0.25']),
-    ('nsga2-dt(0.2, 0.25)', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_23_23_00_23_0.2_0.25']),
-    ('nsga2-dt(0.05, 0.5)', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_23_23_57_47_0.05_0.5']),
-    ('nsga2-dt(0.1, 0.5)', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500nsga2initial/2021_02_19_17_56_00']),
-    ('nsga2-dt(0.2, 0.5)', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_23_22_45_46_0.2_0.5']),
-    ('nsga2-dt(0.05, 0.75)', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_300_500nsga2initial_diff_th/2021_02_23_23_58_25_0.05_0.75'])
-    ]
-
-    town07_path_list_100initial = [
-    ('ga-un-nn-grad', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_100nsga2initial/2021_02_24_01_04_14,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm-un-a', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_100nsga2initial/2021_02_24_01_03_59,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-dt', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_100nsga2initial/2021_02_24_01_04_06'])
-    ]
-
-    town07_path_list_500randominitial = [
-    ('ga-un-nn-grad', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500randominitial/2021_02_16_01_05_59,50_20_adv_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_use_alternate_nn_0_2_1_60_60_diversity_mode_none_uncertainty_exploration_confidence_100_100_1']),
-    ('nsga2-sm-un-a', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_1000_500randominitial/2021_02_24_09_00_15,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-dt', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_500randominitial/2021_02_24_09_00_26'])
-    ]
-
-
-    town07_path_list_1000initial = [
-    ('ga-un-nn-grad', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_1000nsga2initial/2021_02_24_11_44_17,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-sm-un-a', ['run_results/nsga2-un/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_1000nsga2initial/2021_02_24_11_44_07,50_40_regression_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('nsga2-dt', ['run_results/nsga2-dt/town07_front_0/go_straight_town07/lbc/new_0.1_0.5_700_1000nsga2initial/2021_02_24_11_44_12'])
-    ]
-
-
-    town05_controllers_path_list = [
-    ('lbc', ['run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/lbc/new_0.1_0.5_500initial_1000/2021_02_16_11_43_05,50_20_adv_nn_1000_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_100_100_only_unique_1_eps_1.01']),
-    ('pid-1', ['run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/auto_pilot/0.1_0.5_700_500nsga2initial/2021_02_24_08_53_29,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01']),
-    ('pid-2', ['run_results/nsga2-un/town05_right_0/leading_car_braking_town05_fixed_npc_num/pid_agent/0.1_0.5_700_500nsga2initial/2021_02_24_09_00_47,50_40_adv_nn_700_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01'])
-    ]
-
-
-
-
-
-    warmup_pth_town07 = 'run_results/seeds/nsga2_un_1500/town07_front_0/2021_02_17_11_54_52,50_30_none_1500_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01'
-    warmup_pth_town01 = 'run_results/seeds/nsga2_un_1500/town01_left_0/2021_02_17_22_39_22,50_30_none_1500_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01'
-    warmup_pth_town03_out_of_road = 'run_results/seeds/nsga2_un_1500_out_of_road/town03_front_1/2021_02_19_23_28_03,50_30_none_1500_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_250_250_only_unique_1_eps_1.01'
-    warmup_pth_town05_out_of_road = 'run_results/seeds/nsga2_un_1500_out_of_road/town05_right_0/2021_02_19_23_28_04,50_30_none_1500_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_250_250_only_unique_1_eps_1.01'
-    warmup_pth_town05_collision = 'run_results/seeds/nsga2_un_1500/town05_right_0/2021_02_17_11_54_58,50_30_none_1500_100_1.01_-4_0.9_coeff_0.0_0.1_0.5__one_output_n_offsprings_300_200_200_only_unique_1_eps_1.01'
-    warmup_pth_cutoff = 500
-
+    from data_path.lbc_data_path import *
 
     # town_path_lists = [town07_path_list, town01_path_list, town03_out_of_road_path_list, town05_out_of_road_path_list, town07_ablation_path_list, town07_seeds_ablation_path_list]
     # warmup_pths = [warmup_pth_town07, warmup_pth_town01, warmup_pth_town03_out_of_road, warmup_pth_town05_out_of_road, warmup_pth_town07, warmup_pth_town07]
@@ -1306,11 +1196,11 @@ if __name__ == '__main__':
     # range_upper_bounds = [15, 15, 15, 15, 15, 7]
     # unique_coeffs_list = [[], [], [], [], [], []]
 
-    town_path_lists = [town07_path_list, town01_path_list, town03_out_of_road_path_list, town05_out_of_road_path_list]
-    warmup_pths = [[warmup_pth_town07], [warmup_pth_town01], [warmup_pth_town03_out_of_road], [warmup_pth_town05_out_of_road]]
-    bug_types = ['collision', 'collision', 'out-of-road', 'out-of-road']
-    towns = ['town07', 'town01', 'town03', 'town05']
-    range_upper_bounds = [15, 15, 15, 15]
+    town_path_lists = [town03_out_of_road_path_list, town05_out_of_road_path_list, town07_path_list, town01_path_list]
+    warmup_pths = [[warmup_pth_town03_out_of_road, warmup_pth_town03_out_of_road, warmup_pth_town03_out_of_road, warmup_pth_town03_out_of_road, None], [warmup_pth_town05_out_of_road, warmup_pth_town05_out_of_road, warmup_pth_town05_out_of_road, warmup_pth_town05_out_of_road, None], [warmup_pth_town07, warmup_pth_town07, warmup_pth_town07, warmup_pth_town07, None], [warmup_pth_town01, warmup_pth_town01, warmup_pth_town01, warmup_pth_town01, None]]
+    bug_types = ['out-of-road', 'out-of-road', 'collision', 'collision']
+    towns = ['town03', 'town05', 'town07', 'town01']
+    range_upper_bounds = [25, 25, 25, 25]
     unique_coeffs_list = [[], [], [], []]
 
 
@@ -1335,37 +1225,40 @@ if __name__ == '__main__':
     # range_upper_bounds = [15]
     # unique_coeffs_list = [[]]
 
+    # ------------------------- LBC -------------------------
 
 
+    # ------------------------- Apollo -------------------------
 
-    borresgas_path_list = [
-    ('ga-un-nn-grad',
-    ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_13_29_54,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
-    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_17_44_01,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
-    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_19_28_27,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
-    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_18_06_10,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
-    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_20_20_06,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
-    'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_08_09_27_08,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1'
-    ]),
-    ('nsga2-sm-un-a',
-    ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_15_48_26,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_21_18_15,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_13_19_37,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_15_31_36,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_22_38_30,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_08_00_35_23,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1'
-    ]),
-    ('av-fuzzer',
-    ['svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_04_23_07_34,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0', 'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_21_09_58,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
-    'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_09_36_45,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
-    'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_13_52_55,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
-    'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_23_42_55,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
-    'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_09_29_17,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0']),
-    ]
+    # borresgas_path_list = [
+    # ('ga-un-nn-grad',
+    # ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_13_29_54,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    # 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_17_44_01,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    # 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_19_28_27,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    # 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_18_06_10,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    # 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_20_20_06,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1',
+    # 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_08_09_27_08,10_14_adv_nn_140_coeff_0.0_0.1_0.5_only_unique_1'
+    # ]),
+    # ('nsga2-sm-un-a',
+    # ['svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_15_48_26,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_21_18_15,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_13_19_37,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_15_31_36,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_22_38_30,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1', 'svl_script/run_results_svl/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_08_00_35_23,10_14_regression_nn_280_coeff_0.0_0.1_0.5_only_unique_1'
+    # ]),
+    # ('av-fuzzer',
+    # ['svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_04_23_07_34,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0', 'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_21_09_58,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
+    # 'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_09_36_45,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
+    # 'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_13_52_55,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
+    # 'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_06_23_42_55,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0',
+    # 'svl_script/run_results_svl/avfuzzer/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_07_09_29_17,4_120_none_240_coeff_0.0_0.1_0.5_only_unique_0']),
+    # ]
 
-    borregas_warmup = 'svl_script/run_results_svl/seeds/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_09_22_50,10_24_none_240_coeff_0.0_0.1_0.5_only_unique_1'
-    town_path_lists = [borresgas_path_list]
-    warmup_pths = [[borregas_warmup, borregas_warmup, None]]
-    bug_types = ['collision']
-    towns = ['Borregas Ave']
-    range_upper_bounds = [24]
-    unique_coeffs_list = [[]]
+    # borregas_warmup = 'svl_script/run_results_svl/seeds/nsga2-un/BorregasAve_left/turn_left_one_ped_and_one_vehicle/apollo_6_with_signal/2021_12_05_09_22_50,10_24_none_240_coeff_0.0_0.1_0.5_only_unique_1'
+    # town_path_lists = [borresgas_path_list]
+    # warmup_pths = [[borregas_warmup, borregas_warmup, None]]
+    # bug_types = ['collision']
+    # towns = ['Borregas Ave']
+    # range_upper_bounds = [24]
+    # unique_coeffs_list = [[]]
 
+    # ------------------------- Apollo -------------------------
 
 
 
@@ -1410,7 +1303,7 @@ if __name__ == '__main__':
         town = towns[i]
         range_upper_bound = range_upper_bounds[i]
         unique_coeffs = unique_coeffs_list[i]
-        draw_simulation_wrapper(town_path_list, warmup_pth, bug_type, town, range_upper_bound, unique_coeffs, warmup_pth_cutoff=100, plot_prev_X=True, step=10)
+        draw_simulation_wrapper(town_path_list, warmup_pth, bug_type, town, range_upper_bound, unique_coeffs, warmup_pth_cutoff=500, plot_prev_X=True, step=50)
 
 
 

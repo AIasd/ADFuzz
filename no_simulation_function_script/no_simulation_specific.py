@@ -12,7 +12,7 @@ def assign_key_value_pairs(search_space_info, fixed_hyperparameters, parameters_
             assert not hasattr(search_space_info, k), k+'should not appear twice.'
             setattr(search_space_info, k, v)
 
-def generate_fuzzing_content(fuzzing_arguments, scenario_labels, scenario_label_types, min_bounds, max_bounds):
+def generate_fuzzing_content(scenario_labels, scenario_label_types, min_bounds, max_bounds):
     labels = scenario_labels
     mask = scenario_label_types
 

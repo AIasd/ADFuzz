@@ -19,3 +19,6 @@ no_simulation_function_script/run_results_no_simulation
 interp
 *.txt
 *.pickle
+*.pdf
+websocket_script/run_results_websocket
+*.ipynb

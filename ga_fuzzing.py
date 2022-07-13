@@ -716,7 +716,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
                 clfs, confs, chosen_weights, standardize_prev = pretrain_regression_nets(initial_X, initial_objectives_list, self.problem.objective_weights, self.problem.xl, self.problem.xu, self.problem.labels, self.problem.customized_constraints, cutoff, cutoff_end, self.problem.fuzzing_content.keywords_dict, choose_weight_inds)
             else:
                 standardize_prev = None
-
+            print('len(self.all_pop_run_X)', len(self.all_pop_run_X))
             X_train_ori = self.all_pop_run_X
             X_test_ori = self.tmp_off.get("X")
 
@@ -724,6 +724,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
             cutoff = X_train_ori.shape[0]
             cutoff_end = initial_X.shape[0]
             partial = True
+            print('len(initial_X)', len(initial_X))
 
             X_train, X_test, xl, xu, labels_used, standardize, one_hot_fields_len, param_for_recover_and_decode = process_X(initial_X, self.problem.labels, self.problem.xl, self.problem.xu, cutoff, cutoff_end, partial, len(self.problem.interested_unique_bugs), self.problem.fuzzing_content.keywords_dict, standardize_prev=standardize_prev)
 
@@ -1014,7 +1015,7 @@ class NSGA2_CUSTOMIZED(NSGA2):
         print('\n'*5, 'after initialize evaluator', '\n'*5)
         print('len(self.all_pop_run_X)', len(self.all_pop_run_X))
         print('len(self.problem.objectives_list)', len(self.problem.objectives_list))
-        self.all_pop_run_X = pop.get("X")
+        # self.all_pop_run_X = pop.get("X")
 
 
         # that call is a dummy survival to set attributes that are necessary for the mating selection
@@ -1116,7 +1117,7 @@ def run_nsga2_dt(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run
     y_list_all = []
     objective_list_all = []
     for i in range(fuzzing_arguments.outer_iterations):
-        with open(os.path.join(fuzzing_arguments.parent_folder, i, 'data.pickle'), 'rb') as f_in:
+        with open(os.path.join(fuzzing_arguments.parent_folder, str(i), 'data.pickle'), 'rb') as f_in:
             data_d = pickle.load(f_in)
             x_list = data_d['x_list']
             y_list = data_d['y_list']
@@ -1452,7 +1453,20 @@ if __name__ == '__main__':
         scenario_labels = ['ego_pos', 'ego_init_speed', 'other_pos', 'other_init_speed', 'ped_delay', 'ped_init_speed']
 
 
+        # carla 3d pedestrian crossing
+        fuzzing_arguments.no_simulation_data_path = 'carla_lbc/run_results/grid/town05_right_0/go_straight_town05_one_ped/lbc/2022_03_04_20_30_10,2904_1_none_2904_coeff_0_0.1_0.5_only_unique_0/data.csv'
+        fuzzing_arguments.objective_weights = np.array([1., -1., 0., 0.])
+        fuzzing_arguments.default_objectives = np.array([20., 0., 0., 0.])
+        fuzzing_arguments.objective_labels = ['ego_linear_speed_at_collision', 'min_d', 'ego_collision', 'is_bug']
+        scenario_labels = ['pedestrian_x_0', 'pedestrian_y_0', 'pedestrian_yaw_0']
 
+        # carla 2d change lane
+        fuzzing_arguments.no_simulation_data_path = 'carla_lbc/run_results/grid/town05_front_2/npc_change_lane_town05_one_vehicle/lbc/2022_04_06_00_17_35,1440_1_none_1440_coeff_0_0.1_0.5_only_unique_0/data.csv'
+        fuzzing_arguments.objective_weights = np.array([1., -1., 0., 0.])
+        fuzzing_arguments.default_objectives = np.array([20., 0., 0., 0.])
+        fuzzing_arguments.objective_labels = ['ego_linear_speed_at_collision', 'min_d', 'ego_collision', 'is_bug']
+        scenario_labels = ['vehicle_y_0', 'vehicle_targeted_speed_0']
+        fuzzing_arguments.chosen_labels = ['vehicle_y_0', 'vehicle_targeted_speed_0']
 
 
         scenario_label_types = ['real']*len(scenario_labels)
@@ -1485,10 +1499,27 @@ if __name__ == '__main__':
         # used only when algorithm_name == 'random_local_sphere'
         # fuzzing_arguments.chosen_labels = ['x1', 'x2']
 
-        fuzzing_content = generate_fuzzing_content(fuzzing_arguments, scenario_labels, scenario_label_types, min_bounds, max_bounds)
+        fuzzing_content = generate_fuzzing_content(scenario_labels, scenario_label_types, min_bounds, max_bounds)
         sim_specific_arguments = initialize_no_simulation_specific(fuzzing_arguments)
         run_simulation = run_no_simulation
 
+    elif fuzzing_arguments.simulator == 'websocket':
+        from websocket_script.websocket_specific import generate_fuzzing_content, run_websocket_simulation, initialize_websocket_specific
+        from websocket_script.websocket_objectives_and_bugs import get_unique_bugs, choose_weight_inds, determine_y_upon_weights, get_all_y
+
+        fuzzing_arguments.root_folder = 'websocket_script/run_results_websocket'
+
+        # These fields need to be set to be consistent with the synthetic_function used
+        fuzzing_arguments.objective_weights = np.array([1.])
+        fuzzing_arguments.default_objectives = np.array([0.])
+        fuzzing_arguments.objective_labels = ['max_dec']
+
+        fuzzing_arguments.scenario_type = 'traffic_light_intersection'
+
+
+        fuzzing_content = generate_fuzzing_content(fuzzing_arguments.scenario_type)
+        sim_specific_arguments = initialize_websocket_specific(fuzzing_arguments)
+        run_simulation = run_websocket_simulation
     else:
         raise
     run_ga_general(fuzzing_arguments, sim_specific_arguments, fuzzing_content, run_simulation)

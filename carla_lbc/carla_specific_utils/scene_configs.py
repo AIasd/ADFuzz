@@ -1154,19 +1154,19 @@ customized_routes = {
         "route_id": 0,
         "location_list": [(-151, -60), (-151, -15)],
     },
-    # pick: go through non-signalized intersection, town
-    "town04_front_0": {
-        "town_name": "Town04",
-        "direction": "front",
-        "route_id": 0,
-        "location_list": [(258, -230), (258, -270)],
-    },
     # pick: change lane
     "town03_front_1": {
         "town_name": "Town03",
         "direction": "left",
         "route_id": 0,
         "location_list": [(1.5, 185), (4, 165)],
+    },
+    # potential pick: go through non-signalized intersection, town
+    "town04_front_0": {
+        "town_name": "Town04",
+        "direction": "front",
+        "route_id": 0,
+        "location_list": [(258, -230), (258, -270)],
     },
     # potential pick: change lane, town
     "town05_front_0": {

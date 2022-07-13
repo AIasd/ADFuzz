@@ -1,4 +1,22 @@
+import sys
 import os
+sys.path.append('pymoo')
+carla_root = '../carla_0994_no_rss'
+sys.path.append(carla_root+'/PythonAPI/carla/dist/carla-0.9.9-py3.7-linux-x86_64.egg')
+sys.path.append(carla_root+'/PythonAPI/carla')
+sys.path.append(carla_root+'/PythonAPI')
+
+
+sys.path.append('.')
+sys.path.append('fuzzing_utils')
+sys.path.append('carla_lbc')
+sys.path.append('carla_lbc/leaderboard')
+sys.path.append('carla_lbc/leaderboard/team_code')
+sys.path.append('carla_lbc/scenario_runner')
+sys.path.append('carla_lbc/carla_project')
+sys.path.append('carla_lbc/carla_project/src')
+sys.path.append('carla_lbc/carla_specific_utils')
+
 import math
 import pathlib
 import traceback
