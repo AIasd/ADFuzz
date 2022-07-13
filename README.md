@@ -113,42 +113,14 @@ pip3 install pytorch-lightning==0.8.5
 
 [No Simulation (Function)](https://github.com/AIasd/ADFuzz/blob/main/doc/stack4_no_simulation_function.md)
 
+[CARLA0.9.11+OpenPilot](https://github.com/AIasd/ADFuzz/blob/main/doc/stack5_carla_openpilot.md)
 
-<!-- ## STACK4: CARLA0.9.11+OpenPilot (TBD)
-### Run Fuzzing
-```
-python ga_fuzzing.py --simulator carla_op --n_gen 10 --pop_size 50 --algorithm_name nsga2 --has_run_num 500 --episode_max_time 200 --only_run_unique_cases 0 --objective_weights 1 0 0 0 -1 -2 0 -m op --route_type 'Town06_Opt_forward'
-```
 
-### Rerun previous simulations
-In `~/openpilot/tools/sim/op_script`,
-```
-python rerun_carla_op.py -p <path-to-the-parent-folder-consisting-of-single-simulation-runs-indexed-by-numbers>
-```
 
-### Rerun scenarios using the best sensor prediction
-Move all the subfolders indexed of previously run simulation results in `~/Docuements/self-driving-cars/2020_CARLA_challenge/run_results_op` to `openpilot/tools/sim/op_script/rerun_folder`, then in `openpilot/tools/sim/op_script`,
-```
-python rerun_carla_op.py -p rerun_folder -m2 best_sensor -w 2.5
-```
-
-### Check the number of unique violations in terms of coverage
-In `openpilot/tools/sim/op_script`,
-```
-python trajectory_analysis.py -p <parent folder> -f <fusion folder>
-```
-
-### Analyze fusion errors in terms of objectives
-Rename the original folder as "original" and the rerun_folder as "rerun_2.5_best_sensor". Put them into the same parent folder.
-In `openpilot/tools/sim/op_script`,
-```
-python analyze_fusion_errors.py -p <parent_folder>
-```
--->
 
 
 ## Citing
-If you use the project in your work, please consider citing it with:
+If you use the project in your work, please consider citing the following works:
 ```
 @misc{zhong2021neural,
       title={Neural Network Guided Evolutionary Fuzzing for Finding Traffic Violations of Autonomous Vehicles},
@@ -159,7 +131,19 @@ If you use the project in your work, please consider citing it with:
       primaryClass={cs.SE}
 }
 ```
-
+and
+```
+@misc{https://doi.org/10.48550/arxiv.2109.06404,
+  doi = {10.48550/ARXIV.2109.06404},
+  url = {https://arxiv.org/abs/2109.06404},
+  author = {Zhong, Ziyuan and Hu, Zhisheng and Guo, Shengjian and Zhang, Xinyang and Zhong, Zhenyu and Ray, Baishakhi},
+  keywords = {Robotics (cs.RO), Artificial Intelligence (cs.AI), Machine Learning (cs.LG), Software Engineering (cs.SE), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  title = {Detecting Multi-Sensor Fusion Errors in Advanced Driver-Assistance Systems},
+  publisher = {arXiv},
+  year = {2021},
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+```
 
 ## Reference
 This repo leverages code from [Carla Challenge (with LBC supported)](https://github.com/bradyz/2020_CARLA_challenge) and [pymoo](https://github.com/anyoptimization/pymoo)
